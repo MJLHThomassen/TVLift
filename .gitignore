@@ -1,0 +1,6 @@
+build
+sdkconfig
+sdkconfig.old
+/.vscode/*.DB
+/.vscode/*.DB-shm
+/.vscode/*.DB-wal
