@@ -9,6 +9,7 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_event_loop.h"
+#include "esp_vfs_dev.h"
 
 #include "nvs_flash.h"
 
@@ -176,9 +177,9 @@ void app_main()
         &webserverTaskHandle,
         PRO_CPU_NUM);
 
-    // for(;;)
-    // {
-    //     vTaskSuspend(NULL);
-    // } 
+    for(;;)
+    {
+        vTaskSuspend(NULL);
+    } 
 }
 

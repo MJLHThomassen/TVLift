@@ -37,11 +37,17 @@ static void lift_stop_pul(const lift_device_t* const handle)
     ESP_ERROR_CHECK(ledc_stop(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 0));
 }
 
-void lift_add_device(gpio_num_t gpioEna, gpio_num_t gpioDir, gpio_num_t gpioPul, lift_device_t* const handle)
+void lift_add_device(
+    gpio_num_t gpioEna,
+    gpio_num_t gpioDir,
+    gpio_num_t gpioPul,
+    gpio_num_t gpioEndstopDown,
+    gpio_num_t gpioEndstopUp,
+    lift_device_t* const handle)
 {
     ESP_LOGI(TAG, "Adding lift device %x", (unsigned int)handle);
 
-    gpio_config_t enaDirIo_conf = {
+    gpio_config_t pullupIoConf = {
         .pin_bit_mask = BIT(gpioEna) | BIT(gpioDir),
         .mode= GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
@@ -49,21 +55,23 @@ void lift_add_device(gpio_num_t gpioEna, gpio_num_t gpioDir, gpio_num_t gpioPul,
         .intr_type = GPIO_PIN_INTR_DISABLE
     };
     
-    ESP_ERROR_CHECK(gpio_config(&enaDirIo_conf));
+    ESP_ERROR_CHECK(gpio_config(&pullupIoConf));
 
-    gpio_config_t pulIo_conf = {
-        .pin_bit_mask = BIT(gpioPul),
+    gpio_config_t noPullIoConf = {
+        .pin_bit_mask = BIT(gpioPul) | BIT(gpioEndstopDown) | BIT(gpioEndstopUp),
         .mode= GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_PIN_INTR_DISABLE
     };
     
-    ESP_ERROR_CHECK(gpio_config(&pulIo_conf));
+    ESP_ERROR_CHECK(gpio_config(&noPullIoConf));
 
     handle->gpioEna = gpioEna;
     handle->gpioDir = gpioDir;
     handle->gpioPul = gpioPul;
+    handle->gpioEndstopDown = gpioEndstopDown;
+    handle->gpioEndstopUp = gpioEndstopUp;
     handle->speed = 6400;
 }
 

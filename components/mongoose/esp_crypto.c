@@ -4,8 +4,6 @@
 
 #include "esp_system.h"
 
-#include "esp_log.h"
-
 int mg_ssl_if_mbed_random(void *ctx, unsigned char *buf, size_t len) 
 {  
   (void) ctx;

@@ -1,5 +1,6 @@
 idf_component_register(
     SRCS    
+    "controllers/controller_base.c"
     "controllers/lift_controller.c"
 
     "lift/lift.c"
@@ -10,3 +11,5 @@ idf_component_register(
     "main.c"
 
     INCLUDE_DIRS ".")
+
+spiffs_create_partition_image("spiffs" "data" FLASH_IN_PROJECT)

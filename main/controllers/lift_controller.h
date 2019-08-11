@@ -1,8 +1,8 @@
 #ifndef LIFT_CONTROLLER_H
 #define LIFT_CONTROLLER_H
 
-#include <esp_http_server.h>
+#include <mongoose.h>
 
-void lift_controller_register_uri_handlers(httpd_handle_t server);
+void lift_controller_register_uri_handlers(struct mg_connection* nc);
 
 #endif // LIFT_CONTROLLER_H

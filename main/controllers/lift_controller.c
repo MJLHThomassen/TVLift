@@ -1,4 +1,5 @@
 #include "lift_controller.h"
+#include "controller_base.h"
 
 #include <stdio.h>
 #include <esp_log.h>
@@ -12,123 +13,89 @@ static char TAG[] = __FILE__;
 
 static lift_device_t liftHandle;
 
-static uint32_t getSpeed(httpd_req_t *req)
+static uint32_t getSpeed(struct http_message* message)
 {
     uint32_t speed = 6400;
+    char param[32];
 
-    char* buf;
-    size_t buf_len = httpd_req_get_url_query_len(req) + 1;
-
-    if (buf_len > 1)
+    if(mg_get_http_var(&message->query_string, "speed", param, sizeof(param)) > 0)
     {
-        buf = malloc(buf_len);
-        if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK)
-        {
-            char param[32];
-            
-            /* Get value of expected key from query string */
-            if (httpd_query_key_value(buf, "speed", param, sizeof(param)) == ESP_OK)
-            {
-                speed = (uint32_t)strtoul(param, NULL, 10);
-            }
-        }
-        free(buf);
+        speed = (uint32_t)strtoul(param, NULL, 10);
     }
 
     return speed;
 }
 
-static esp_err_t up_post_handler(httpd_req_t *req)
+static void up_post_handler(struct mg_connection* nc, struct http_message* message)
 {
-    uint32_t speed = getSpeed(req);
+    uint32_t speed = getSpeed(message);
     lift_set_speed(&liftHandle, speed);
 
     lift_up(&liftHandle);
 
-    httpd_resp_send(req, NULL, 0);
-    return ESP_OK;
+    mg_send_head(nc, 200, 0, NULL);
 }
 
-static esp_err_t down_post_handler(httpd_req_t *req)
+static void down_post_handler(struct mg_connection* nc, struct http_message* message)
 {
-    uint32_t speed = getSpeed(req);
+    uint32_t speed = getSpeed(message);
     lift_set_speed(&liftHandle, speed);
 
     lift_down(&liftHandle);
 
-    httpd_resp_send(req, NULL, 0);
-    return ESP_OK;
+    mg_send_head(nc, 200, 0, NULL);
 }
 
-static esp_err_t stop_post_handler(httpd_req_t *req)
+static void stop_post_handler(struct mg_connection* nc, struct http_message* message)
 {
     lift_stop(&liftHandle);
 
-    httpd_resp_send(req, NULL, 0);
-    return ESP_OK;
+    mg_send_head(nc, 200, 0, NULL);
 }
 
-static esp_err_t disable_post_handler(httpd_req_t *req)
+static void speed_get_handler(struct mg_connection* nc, struct http_message* message)
 {
-    lift_disable(&liftHandle);
-
-    httpd_resp_send(req, NULL, 0);
-    return ESP_OK;
-}
-
-static esp_err_t speed_post_handler(httpd_req_t *req)
-{
-    char *str = json_asprintf("{speed:%u}", liftHandle.speed);
-    httpd_resp_set_type(req, HTTPD_TYPE_JSON);
-    httpd_resp_send(req, str, HTTPD_RESP_USE_STRLEN);
+    char* str = json_asprintf("{speed:%u}", liftHandle.speed);
+    mg_send_head(nc, 200, strlen(str), NULL);
+    mg_printf(nc, "%s", str);
     free(str);
-
-    return ESP_OK;
 }
 
-static httpd_uri_t lift_up_uri_handler = {
+static uri_handler_info_t up_post_handler_info = {
     .uri = rootUri "up",
     .method = HTTP_POST,
     .handler = up_post_handler,
-    .user_ctx = NULL
+    .user_data = NULL
     };
 
-static httpd_uri_t lift_down_uri_handler = {
+static uri_handler_info_t down_post_handler_info = {
     .uri = rootUri "down",
     .method = HTTP_POST,
     .handler = down_post_handler,
-    .user_ctx = NULL
+    .user_data = NULL
     };
 
-static httpd_uri_t lift_stop_uri_handler = {
+static uri_handler_info_t stop_post_handler_info = {
     .uri = rootUri "stop",
     .method = HTTP_POST,
     .handler = stop_post_handler,
-    .user_ctx = NULL
+    .user_data = NULL
     };
 
-static httpd_uri_t lift_disable_uri_handler = {
-    .uri = rootUri "disable",
-    .method = HTTP_POST,
-    .handler = disable_post_handler,
-    .user_ctx = NULL
-    };
-
-static httpd_uri_t lift_speed_uri_handler = {
+static uri_handler_info_t speed_get_handler_info = {
     .uri = rootUri "speed",
     .method = HTTP_GET,
-    .handler = speed_post_handler,
-    .user_ctx = NULL
+    .handler = speed_get_handler,
+    .user_data = NULL
     };
 
-void lift_controller_register_uri_handlers(httpd_handle_t server)
+void lift_controller_register_uri_handlers(struct mg_connection* nc)
 {
-    httpd_register_uri_handler(server, &lift_up_uri_handler);
-    httpd_register_uri_handler(server, &lift_down_uri_handler);
-    httpd_register_uri_handler(server, &lift_stop_uri_handler);
-    httpd_register_uri_handler(server, &lift_disable_uri_handler);
-    httpd_register_uri_handler(server, &lift_speed_uri_handler);
+    register_uri_handler(nc, &up_post_handler_info);
+    register_uri_handler(nc, &down_post_handler_info);
+    register_uri_handler(nc, &stop_post_handler_info);
+    register_uri_handler(nc, &speed_get_handler_info);
 
     // Initialize lift
-    lift_add_device(26, 18, 19, &liftHandle);
+    lift_add_device(26, 18, 19, 16, 17, &liftHandle);
 }
