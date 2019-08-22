@@ -11,6 +11,7 @@
 #include <mongoose.h>
 
 #include "controllers/lift_controller.h"
+#include "controllers/upload_controller.h"
 
 #define WEBROOT "/spiffs/www/"
 
@@ -77,6 +78,7 @@ static void webserver_init()
     // Set URI handlers
     ESP_LOGI(TAG, "Registering URI handlers");
     lift_controller_register_uri_handlers(webserverConnection);
+    upload_controller_register_uri_handlers(webserverConnection);
 }
 
 void webserver_task_main(void* pvParameters)

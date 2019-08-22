@@ -4,5 +4,15 @@
     "terminal.integrated.shell.windows": "C:\\WINDOWS\\System32\\cmd.exe",
     "terminal.integrated.shellArgs.windows": [
         "/k", "%IDF_PATH%\\export.bat", "&", "cmd"// Execute export.bat and launch a new cmd so that idf.py is executed properly when used in tasks
-    ]
+    ],
+    
+    "files.associations": {
+        "controller_base.h": "c",
+        "esp_vfs.h": "c",
+        "esp_vfs_dev.h": "c",
+        "mongoose.h": "c",
+        "stdarg.h": "c",
+        "esp_log.h": "c",
+        "esp_intr_alloc.h": "c"
+    }
 }

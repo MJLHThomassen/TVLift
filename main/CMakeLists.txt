@@ -2,6 +2,7 @@ idf_component_register(
     SRCS    
     "controllers/controller_base.c"
     "controllers/lift_controller.c"
+    "controllers/upload_controller.c"
 
     "lift/lift.c"
 

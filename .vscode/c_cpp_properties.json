@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "ESP32-Win",
+            "name": "ESP32",
             "includePath": [
                 "${workspaceRoot}",
                 "${workspaceRoot}/**",
@@ -17,9 +17,12 @@
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": "${workspaceRoot}/.vscode/browse.vc.db"
             },
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "cStandard": "c99",
-            "cppStandard": "c++17",
-            "defines": [ "MG_LOCALS=1" ]
+            "cppStandard": "c++11",
+            "defines": [
+                "MG_LOCALS=1"
+            ]
         }
     ],
     "version": 4

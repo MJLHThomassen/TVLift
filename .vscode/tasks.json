@@ -7,7 +7,7 @@
             "id": "port",
             "type": "promptString",
             "description": "Enter the port to which your ESP32 is connected.",
-            "default": "COM4",
+            "default": "COM5",
         }
     ],
     "tasks": [
@@ -23,7 +23,7 @@
                 "owner": "c",
                 "fileLocation": "autoDetect",
                 "pattern": {
-                    "regexp": "^(.*):(//d+):(//d+)://s+(warning|error)://s+(.*)$",
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
