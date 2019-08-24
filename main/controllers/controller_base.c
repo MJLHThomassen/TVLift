@@ -33,19 +33,15 @@ static void http_request_handler(struct mg_connection* nc, int ev, void* ev_data
 
 static void http_multipart_request_handler(struct mg_connection* nc, int ev, void* ev_data, void* user_data)
 {
-    ESP_LOGI(__FILE__, "Received multipart request: %i", ev);
     multipart_request_uri_handler_info_t* handlerInfo = (multipart_request_uri_handler_info_t*) user_data;
-    ESP_LOGI(__FILE__,"1");
 
     switch (ev) 
     {
     case MG_EV_HTTP_MULTIPART_REQUEST:
     {
-        ESP_LOGI(__FILE__,"2");
         struct http_message* message = (struct http_message*) ev_data;
         if(mg_vcmp(&message->method, handlerInfo->method) == 0)
         {
-            // OK
             // Need to set user_data to handlerInfo so it is availabe to subsequent calls
             nc->user_data = handlerInfo;
         }
@@ -61,29 +57,34 @@ static void http_multipart_request_handler(struct mg_connection* nc, int ev, voi
     case MG_EV_HTTP_PART_DATA:
     case MG_EV_HTTP_PART_END:
     {
-        ESP_LOGI(__FILE__,"3");
         struct mg_http_multipart_part* part = (struct mg_http_multipart_part*) ev_data;
+
+        multipart_request_part_type_t type;
+        switch (ev)
+        {
+        case MG_EV_HTTP_PART_BEGIN:
+            type = MULTIPART_REQUEST_PART_TYPE_BEGIN;
+            break;
+        case MG_EV_HTTP_PART_END:
+            type = MULTIPART_REQUEST_PART_TYPE_END;
+            break;
+        case MG_EV_HTTP_PART_DATA:
+        default:
+            type = MULTIPART_REQUEST_PART_TYPE_DATA;
+            break;
+        }
           
         // Call the handler
-        ESP_LOGI(__FILE__,"4, %s %i", handlerInfo->uri, (int)handlerInfo->handler);
-        handlerInfo->handler(nc, part);
+        handlerInfo->handler(nc, part, type);
 
-        ESP_LOGI(__FILE__,"5");
         break;
     }
 
     case MG_EV_HTTP_MULTIPART_REQUEST_END:
-        ESP_LOGI(__FILE__,"6");
-        mg_printf(nc,
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/plain\r\n"
-                "Connection: close\r\n\r\n"
-                "Ok.\r\n");
+        mg_http_send_redirect(nc, 301, mg_mk_str("/"),mg_mk_str(NULL));
         nc->flags |= MG_F_SEND_AND_CLOSE;
         break;
     }
-
-    ESP_LOGI(__FILE__,"7");
 }
 
 void register_uri_handler(struct mg_connection* nc, uri_handler_info_t* uriHandlerInfo)

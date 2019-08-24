@@ -8,8 +8,15 @@
 #define HTTP_PUT    "PUT"
 #define HTTP_DELETE "DELETE"
 
+typedef enum
+{
+    MULTIPART_REQUEST_PART_TYPE_BEGIN,
+    MULTIPART_REQUEST_PART_TYPE_DATA,
+    MULTIPART_REQUEST_PART_TYPE_END
+} multipart_request_part_type_t;
+
 typedef void (*uri_handler_t)(struct mg_connection* nc, struct http_message* message);
-typedef void (*multipart_request_uri_handler_t)(struct mg_connection* nc, struct mg_http_multipart_part* part);
+typedef void (*multipart_request_uri_handler_t)(struct mg_connection* nc, struct mg_http_multipart_part* part, multipart_request_part_type_t type);
 
 typedef struct uri_handler_info_t
 {

@@ -13,6 +13,9 @@
         "mongoose.h": "c",
         "stdarg.h": "c",
         "esp_log.h": "c",
-        "esp_intr_alloc.h": "c"
-    }
+        "esp_intr_alloc.h": "c",
+        "upload_controller.h": "c",
+        "esp_ota_ops.h": "c"
+    },
+    "git.ignoreLimitWarning": true
 }

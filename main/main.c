@@ -27,8 +27,21 @@
 static const char* TAG = "APP";
 #define STACK_KB 1024 / sizeof(portSTACK_TYPE) // The size of a Kilobyte of stack memory
 
+static bool shuttingDown = false;
+
+static void shutdown_handler(void)
+{
+    shuttingDown = true;
+}
+
 static void system_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
+    if(shuttingDown)
+    {
+        // Ignore every event if we are shutting down
+        return;
+    }
+
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
         ESP_LOGI(TAG, "WIFI_EVENT: WIFI_EVENT_STA_START");
@@ -150,7 +163,12 @@ void app_main()
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
+
     
+    // Register shutdown handler
+    ESP_ERROR_CHECK(esp_register_shutdown_handler(&shutdown_handler));
+    
+    // Create the event loop
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     initialise_spiffs();
