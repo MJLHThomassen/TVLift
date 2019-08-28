@@ -18,8 +18,7 @@
           <!-- <div>
             <input style="width: 100%; margin: 0px;" placeholder="Search..." type="search" id="search-bar" oninput="search()">
           </div> -->
-          <router-link to="/">Lift Controls</router-link>
-          <router-link to="/about">About</router-link>
+          <router-link v-for="route in $router.options.routes" :key="route.path" :to="route.path">{{ route.meta.displayName }}</router-link>
         </nav>
         
         <!-- Main View -->
@@ -39,15 +38,11 @@
 
 <script lang="ts">
 import { Component, Vue, Ref } from 'vue-property-decorator';
-import "mini.css/dist/mini-dark.min.css";
+import 'mini.css/dist/mini-dark.min.css';
 
 @Component({})
 export default class App extends Vue
 {
-  public constructor()
-  {
-    super();
-  }
 }
 </script>
 

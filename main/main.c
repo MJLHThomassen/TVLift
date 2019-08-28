@@ -22,7 +22,6 @@
 #include "sdkconfig.h"
 #include "tasks/blink/blink_task.h"
 #include "tasks/webserver/webserver_task.h"
-#include "controllers/lift_controller.h"
 
 static const char* TAG = "APP";
 #define STACK_KB 1024 / sizeof(portSTACK_TYPE) // The size of a Kilobyte of stack memory

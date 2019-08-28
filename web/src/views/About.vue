@@ -13,19 +13,16 @@
 import { Component, Vue, Prop } from 'vue-property-decorator';
 
 @Component({})
-export default class About extends Vue 
-{
+export default class About extends Vue {
   @Prop()
   private name: string;
 
-  public constructor()
-  {
+  public constructor() {
     super();
-    this.name = "Maarten Thomassen";
+    this.name = 'Maarten Thomassen';
   }
 
-  private doit(name: string): void
-  {
+  private doit(name: string): void {
     this.name = name;
   }
 }

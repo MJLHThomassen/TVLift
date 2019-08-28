@@ -7,7 +7,6 @@
 #include <esp_log.h>
 #include <esp_event.h>
 
-// #include <esp_http_server.h>
 #include <mongoose.h>
 
 #include "controllers/lift_controller.h"
@@ -30,7 +29,7 @@ static void webserver_ev_handler(struct mg_connection* c, int ev, void* ev_data,
     case MG_EV_HTTP_REQUEST:
         if (mg_vcmp(&message->uri, "/") == 0) 
         {
-            mg_http_serve_file(c, message, WEBROOT "index.html", mg_mk_str("text/html"), mg_mk_str(""));
+            mg_http_serve_file(c, message, WEBROOT "index.html", mg_mk_str("text/html"), mg_mk_str(NULL));
         }
         else
         {
@@ -64,6 +63,7 @@ static void webserver_init()
     http_server_opts.document_root = WEBROOT;
     http_server_opts.enable_directory_listing = "no";
     http_server_opts.index_files =  WEBROOT "index.html";
+    http_server_opts.extra_headers = "Access-Control-Allow-Origin: *";
 
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, wifi_event_sta_disconnected, NULL);
     esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, ip_event_sta_got_ip, NULL);

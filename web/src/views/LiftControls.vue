@@ -17,31 +17,27 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { ArrowUpIcon, ArrowDownIcon, SquareIcon } from "vue-feather-icons";
-import axios from "axios";
+import { ArrowUpIcon, ArrowDownIcon, SquareIcon } from 'vue-feather-icons';
+import axios from 'axios';
 
 @Component({
   components: {
     ArrowUpIcon,
     ArrowDownIcon,
-    SquareIcon
+    SquareIcon,
   },
 })
-export default class LiftControls extends Vue 
-{
-  private liftGoUp(): void
-  {
-    axios.post("/lift/up");
+export default class LiftControls extends Vue {
+  private liftGoUp(): void {
+    axios.post('/lift/up');
   }
 
-  private liftGoDown(): void
-  {
-    axios.post("/lift/down");
+  private liftGoDown(): void {
+    axios.post('/lift/down');
   }
 
-  private liftStop(): void
-  {
-    axios.post("/lift/stop");
+  private liftStop(): void {
+    axios.post('/lift/stop');
   }
 }
 </script>

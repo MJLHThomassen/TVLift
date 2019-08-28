@@ -9,7 +9,20 @@ export default new Router({
     {
       path: '/',
       name: 'liftControls',
-      component: LiftControls,
+      component: () => import(/* webpackChunkName: "update" */ './views/LiftControls.vue'),
+      meta:
+      {
+        displayName: 'Lift Controls',
+      },
+    },
+    {
+      path: '/update',
+      name: 'update',
+      component: () => import(/* webpackChunkName: "update" */ './views/Update.vue'),
+      meta:
+      {
+        displayName: 'Update',
+      },
     },
     {
       path: '/about',
@@ -18,6 +31,10 @@ export default new Router({
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import(/* webpackChunkName: "about" */ './views/About.vue'),
+      meta:
+      {
+        displayName: 'About',
+      },
     },
   ],
 });

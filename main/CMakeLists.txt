@@ -1,13 +1,13 @@
 idf_component_register(
     SRCS    
-    "controllers/controller_base.c"
-    "controllers/lift_controller.c"
-    "controllers/upload_controller.c"
-
     "lift/lift.c"
 
     "tasks/blink/blink_task.c"
+    
     "tasks/webserver/webserver_task.c"
+    "tasks/webserver/controllers/controller_base.c"
+    "tasks/webserver/controllers/lift_controller.c"
+    "tasks/webserver/controllers/upload_controller.c"
 
     "main.c"
 
