@@ -15,7 +15,13 @@
         "esp_log.h": "c",
         "esp_intr_alloc.h": "c",
         "upload_controller.h": "c",
-        "esp_ota_ops.h": "c"
+        "esp_ota_ops.h": "c",
+        "esp_image_format.h": "c",
+        "stdbool.h": "c",
+        "stddef.h": "c",
+        "stdint.h": "c",
+        "esp_partition.h": "c",
+        "esp_flash_partitions.h": "c"
     },
     "git.ignoreLimitWarning": true
 }

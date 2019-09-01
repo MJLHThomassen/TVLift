@@ -4,22 +4,39 @@
       <fieldset class="col-sm-12 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
         <legend>Update</legend>
           <div class="dropbox">
-            <input type="file" id="update-file-input" @change="updateFileChanged"/>
+            <input id="firmware-file-input" type="file" @change="firmwareFileChanged"/>
+            <p>
+              Drag your file here to begin<br>or click to browse
+            </p>
+          </div>
+          <div class="dropbox">
+            <input id="spiffs-file-input" type="file" @change="spiffsFileChanged"/>
             <p>
               Drag your file here to begin<br>or click to browse
             </p>
           </div>
           <button v-bind:disabled="!canUpdate" type="button" class="button primary" @click="update">Update!</button>
-          <progress v-if="isUpdating" :value="uploadProgress" max="1000" class="primary"></progress>
+      </fieldset>
+      <fieldset v-if="isUpdating || updateErrorMessage" class="col-sm-12 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
+        <legend>Status</legend>
+        <div>
+          <p>Updating: {{ updateProgress }} %</p>
+          <progress :value="updateProgress * 10" max="1000" class="primary"></progress>
+        </div>
+        <div v-if="updateErrorMessage" class="card fluid error">
+          {{ updateErrorMessage }}
+        </div>
       </fieldset>
     </form>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { UploadIcon } from 'vue-feather-icons';
-import axios, { AxiosError } from 'axios';
+import { Component, Vue } from "vue-property-decorator";
+import { UploadIcon } from "vue-feather-icons";
+import axios, { AxiosError } from "axios";
+
+import { sleep } from "@/services/sleep";
 
 @Component({
   components: {
@@ -31,57 +48,75 @@ export default class LiftControls extends Vue
 
   public get canUpdate(): boolean
   {
-    return this.selectedFile != null && !this.isUpdating;
+    return this.selectedFirmwareFile != null && this.selectedSpiffsFile != null && !this.isUpdating;
   }
 
-  public selectedFile: File | null = null;
-  public isUpdating: boolean = false;
-  private uploadProgress: number = 0;
+  private selectedFirmwareFile: File | null = null;
+  private selectedSpiffsFile: File | null = null;
+  private isUpdating: boolean = false;
+  private updateProgress: number = 0;
+  private updateErrorMessage: string = "";
 
-  private updateFileChanged(event: Event): void
+  private firmwareFileChanged(event: Event): void
   {
     const fileInput = event.target as HTMLInputElement;
 
     if (fileInput != null && fileInput.files != null)
     {
-      this.selectedFile = fileInput.files[0];
+      this.selectedFirmwareFile = fileInput.files[0];
+    }
+  }
+
+  private spiffsFileChanged(event: Event): void
+  {
+    const fileInput = event.target as HTMLInputElement;
+
+    if (fileInput != null && fileInput.files != null)
+    {
+      this.selectedSpiffsFile = fileInput.files[0];
     }
   }
 
   private async update(): Promise<void>
   {
-    if (this.selectedFile == null)
+    if (this.selectedFirmwareFile == null || this.selectedSpiffsFile == null)
     {
       return;
     }
 
+    this.updateErrorMessage = "";
     this.isUpdating = true;
 
     const data = new FormData();
-    data.set('update-file', this.selectedFile, this.selectedFile.name);
+    data.set("app", this.selectedFirmwareFile, this.selectedFirmwareFile.name);
+    data.set("spiffs", this.selectedSpiffsFile, this.selectedSpiffsFile.name);
 
     try
     {
       const response = await axios.post(
-        'upload/firmware',
+        "upload/firmware",
         data,
         {
           onUploadProgress: (progressEvent: ProgressEvent) =>
           {
-            this.uploadProgress = Math.round(1000 * progressEvent.loaded / progressEvent.total);
+            this.updateProgress = Math.round(100 * progressEvent.loaded / progressEvent.total);
           },
         });
       console.log(response);
     }
     catch (e)
     {
+      this.updateProgress = 0;
+
       if (this.isAxiosError(e))
       {
         console.log(e.message);
+        this.updateErrorMessage = e.message;
       }
       else
       {
-        console.log('Something went wrong: ' + e);
+        console.log("Something went wrong: " + e);
+        this.updateErrorMessage = e;
       }
     }
 
@@ -116,9 +151,9 @@ export default class LiftControls extends Vue
     }
 }
 
-#update-file-input
+.dropbox input
 {
-    opacity: 0; // invisible but it's there!
+    opacity: 0; // invisible but it"s there!
     
     position: absolute;
     width: 100%;

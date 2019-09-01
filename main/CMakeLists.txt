@@ -1,6 +1,8 @@
 idf_component_register(
     SRCS    
     "lift/lift.c"
+    
+    "ota/ota_service.c"
 
     "tasks/blink/blink_task.c"
     
@@ -13,4 +15,4 @@ idf_component_register(
 
     INCLUDE_DIRS ".")
 
-spiffs_create_partition_image("spiffs" "data" FLASH_IN_PROJECT)
+spiffs_create_partition_image("spiffs_0" "data" FLASH_IN_PROJECT)

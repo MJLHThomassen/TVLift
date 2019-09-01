@@ -44,6 +44,9 @@ static void http_multipart_request_handler(struct mg_connection* nc, int ev, voi
         {
             // Need to set user_data to handlerInfo so it is availabe to subsequent calls
             nc->user_data = handlerInfo;
+
+            // Call the handler
+            handlerInfo->handler(nc, NULL, MULTIPART_REQUEST_MESSAGE_TYPE_BEGIN, handlerInfo->user_data);
         }
         else
         {
@@ -56,34 +59,32 @@ static void http_multipart_request_handler(struct mg_connection* nc, int ev, voi
     case MG_EV_HTTP_PART_BEGIN:
     case MG_EV_HTTP_PART_DATA:
     case MG_EV_HTTP_PART_END:
+    case MG_EV_HTTP_MULTIPART_REQUEST_END:
     {
         struct mg_http_multipart_part* part = (struct mg_http_multipart_part*) ev_data;
 
-        multipart_request_part_type_t type;
+        multipart_request_message_type_t type;
         switch (ev)
         {
         case MG_EV_HTTP_PART_BEGIN:
-            type = MULTIPART_REQUEST_PART_TYPE_BEGIN;
-            break;
-        case MG_EV_HTTP_PART_END:
-            type = MULTIPART_REQUEST_PART_TYPE_END;
+            type = MULTIPART_REQUEST_MESSAGE_TYPE_PART_BEGIN;
             break;
         case MG_EV_HTTP_PART_DATA:
+            type = MULTIPART_REQUEST_MESSAGE_TYPE_PART_DATA;
+            break;
+        case MG_EV_HTTP_PART_END:
+            type = MULTIPART_REQUEST_MESSAGE_TYPE_PART_END;
+            break;
+        case MG_EV_HTTP_MULTIPART_REQUEST_END:
         default:
-            type = MULTIPART_REQUEST_PART_TYPE_DATA;
+            type = MULTIPART_REQUEST_MESSAGE_TYPE_END;
             break;
         }
           
         // Call the handler
-        handlerInfo->handler(nc, part, type);
-
+        handlerInfo->handler(nc, part, type, handlerInfo->user_data);
         break;
     }
-
-    case MG_EV_HTTP_MULTIPART_REQUEST_END:
-        mg_http_send_redirect(nc, 301, mg_mk_str("/"),mg_mk_str(NULL));
-        nc->flags |= MG_F_SEND_AND_CLOSE;
-        break;
     }
 }
 

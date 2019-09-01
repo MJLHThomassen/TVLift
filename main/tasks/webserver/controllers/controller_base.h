@@ -10,13 +10,21 @@
 
 typedef enum
 {
-    MULTIPART_REQUEST_PART_TYPE_BEGIN,
-    MULTIPART_REQUEST_PART_TYPE_DATA,
-    MULTIPART_REQUEST_PART_TYPE_END
-} multipart_request_part_type_t;
+    MULTIPART_REQUEST_MESSAGE_TYPE_BEGIN,
+    MULTIPART_REQUEST_MESSAGE_TYPE_PART_BEGIN,
+    MULTIPART_REQUEST_MESSAGE_TYPE_PART_DATA,
+    MULTIPART_REQUEST_MESSAGE_TYPE_PART_END,
+    MULTIPART_REQUEST_MESSAGE_TYPE_END
+} multipart_request_message_type_t;
 
-typedef void (*uri_handler_t)(struct mg_connection* nc, struct http_message* message);
-typedef void (*multipart_request_uri_handler_t)(struct mg_connection* nc, struct mg_http_multipart_part* part, multipart_request_part_type_t type);
+typedef void (*uri_handler_t)(
+    struct mg_connection* nc,
+    struct http_message* const message);
+typedef void (*multipart_request_uri_handler_t)(
+    struct mg_connection* const nc,
+    struct mg_http_multipart_part* const part,
+    const multipart_request_message_type_t type,
+    void* userData);
 
 typedef struct uri_handler_info_t
 {
