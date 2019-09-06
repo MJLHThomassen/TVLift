@@ -1,14 +1,14 @@
 
+#include "shared.h"
 
 #include <stdio.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
-#include "soc/soc.h"
+#include <soc/soc.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include "esp_log.h"
 #include "esp_system.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_vfs_dev.h"
 
 #include "nvs_flash.h"
@@ -23,8 +23,9 @@
 #include "tasks/blink/blink_task.h"
 #include "tasks/webserver/webserver_task.h"
 
+const char hostname[] = "tvlift";
+
 static const char* TAG = "APP";
-#define STACK_KB 1024 / sizeof(portSTACK_TYPE) // The size of a Kilobyte of stack memory
 
 static bool shuttingDown = false;
 
@@ -44,11 +45,18 @@ static void system_event_handler(void* arg, esp_event_base_t event_base, int32_t
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
         ESP_LOGI(TAG, "WIFI_EVENT: WIFI_EVENT_STA_START");
+        
+        // Set hostname
+        ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, hostname));
+
+        // Connect wifi to access point
         ESP_ERROR_CHECK(esp_wifi_connect());
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
         ESP_LOGI(TAG, "WIFI_EVENT: WIFI_EVENT_STA_DISCONNECTED");
+
+        // Re-connect wifi to access point
         ESP_ERROR_CHECK(esp_wifi_connect());
     }
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
@@ -103,8 +111,6 @@ static void initialise_spiffs(void)
 
 static void initialise_mdns(void)
 {
-    const char hostname[] = "tvlift";
-
     // Initialize mDNS
     ESP_ERROR_CHECK(mdns_init());
 
@@ -122,7 +128,7 @@ static void initialise_mdns(void)
     //     {"p", "password"}};
 
     // Initialize service
-    ESP_ERROR_CHECK(mdns_service_add("ESP32-WebServer", "_http", "_tcp", 80, NULL, 0));
+    ESP_ERROR_CHECK(mdns_service_add("TV Lift", "_http", "_tcp", 80, NULL, 0));
 }
 
 static void initialise_wifi(void)
@@ -130,8 +136,10 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &system_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &system_event_handler, NULL));
 
+    // Initialise tcpip adapter
     tcpip_adapter_init();
 
+    // Initialise wifi
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
@@ -145,8 +153,11 @@ static void initialise_wifi(void)
 
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
 
+    // Configure wifi
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+
+    // Start wifi
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
@@ -162,7 +173,6 @@ void app_main()
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
-
     
     // Register shutdown handler
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&shutdown_handler));
@@ -172,7 +182,6 @@ void app_main()
 
     initialise_spiffs();
     initialise_mdns();
-    initialise_wifi();
 
     TaskHandle_t blinkTaskHandle = NULL; 
     xTaskCreatePinnedToCore(
@@ -194,9 +203,14 @@ void app_main()
         &webserverTaskHandle,
         PRO_CPU_NUM);
 
+    // Initialise wifi after all tasks are created since some might depend on ceratin events
+    initialise_wifi();
+
     for(;;)
     {
         vTaskSuspend(NULL);
-    } 
+    }
+
+    vTaskDelete(NULL);
 }
 

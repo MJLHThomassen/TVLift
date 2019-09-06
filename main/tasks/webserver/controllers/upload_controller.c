@@ -11,7 +11,6 @@ static char TAG[] = __FILE__;
 
 static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multipart_part* part, multipart_request_message_type_t type, void* userData)
 {
-    esp_err_t err;
     ota_service_err_t otaErr = OTA_SERVICE_OK;
     ota_state_t* otaState = NULL;
 
@@ -21,8 +20,9 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
     {
         otaState = (ota_state_t*)userData;
         ota_service_initialize(otaState);
+        break;
     }
-    break;
+
     case MULTIPART_REQUEST_MESSAGE_TYPE_PART_BEGIN:
     {
         otaState = (ota_state_t*)userData;
@@ -39,6 +39,7 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
             mg_http_send_error(nc, 400, "Multipart variable name not recognized.");
             return;
         }
+
         break;
     }
     
@@ -96,7 +97,10 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
                 return;
             }
         }
+
+        break;
     }
+
     case MULTIPART_REQUEST_MESSAGE_TYPE_END:
     {
         // Redirect client to reset page
@@ -108,7 +112,7 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
         esp_restart();
         return;
     }
-    break;
+
     }
       
     switch (otaErr)

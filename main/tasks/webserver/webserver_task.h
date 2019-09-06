@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define WEBSERVER_TASK_TAG "Webserver"
-#define WEBSERVER_TASK_STACK_SIZE_KB 8
+#define WEBSERVER_TASK_STACK_SIZE_KB 1
 
 void webserver_task_main(void* pvParameters);
 

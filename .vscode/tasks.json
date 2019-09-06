@@ -23,7 +23,7 @@
                 "owner": "c",
                 "fileLocation": "autoDetect",
                 "pattern": {
-                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "regexp": "^\\.\\.\\/(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
@@ -44,6 +44,7 @@
         },
         {
             "label": "Flash",
+            "dependsOn": [ "Build" ],
             "type": "shell",
             "command": "idf.py",
             "args": [ "-p", "${config:port}", "flash"],
@@ -53,6 +54,7 @@
         },
         {
             "label": "Flash & Monitor",
+            "dependsOn": [ "Build" ],
             "type": "shell",
             "command": "idf.py",
             "args": [ "-p", "${config:port}", "flash", "monitor"],

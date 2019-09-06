@@ -1,0 +1,1 @@
+#define STACK_KB 1024 / sizeof(portSTACK_TYPE) // The size of a Kilobyte of stack memory

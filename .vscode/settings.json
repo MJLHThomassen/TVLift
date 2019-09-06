@@ -21,7 +21,10 @@
         "stddef.h": "c",
         "stdint.h": "c",
         "esp_partition.h": "c",
-        "esp_flash_partitions.h": "c"
+        "esp_flash_partitions.h": "c",
+        "freertos.h": "c",
+        "soc.h": "c",
+        "task.h": "c"
     },
     "git.ignoreLimitWarning": true
 }

@@ -18,18 +18,22 @@ typedef enum
 typedef struct ota_state_t
 {
     size_t nr_of_bytes_received;
-    uint8_t header[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t)];  
 
-    esp_ota_handle_t update_handle;
-    const esp_partition_t* update_partition;
+    // App
+    uint8_t app_header[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t)];  
+    esp_ota_handle_t app_update_handle;
+    const esp_partition_t* app_update_partition;
+
+    // SPIFFS
+
 } ota_state_t;
 
 ota_service_err_t ota_service_initialize(ota_state_t* otaState);
 ota_service_err_t ota_service_app_update_begin(ota_state_t* otaState);
-ota_service_err_t ota_service_app_update_write(ota_state_t* otaState, char* data, size_t length);
+ota_service_err_t ota_service_app_update_write(ota_state_t* otaState, const char* data, size_t length);
 ota_service_err_t ota_service_app_update_end(ota_state_t* otaState);
 ota_service_err_t ota_service_spiffs_update_begin(ota_state_t* otaState);
-ota_service_err_t ota_service_spiffs_update_write(ota_state_t* otaState, char* data, size_t length);
+ota_service_err_t ota_service_spiffs_update_write(ota_state_t* otaState, const char* data, size_t length);
 ota_service_err_t ota_service_spiffs_update_end(ota_state_t* otaState);
 ota_service_err_t ota_service_finalize(ota_state_t* otaState);
 

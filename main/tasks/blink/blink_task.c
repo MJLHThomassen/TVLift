@@ -35,4 +35,6 @@ void blink_task_main(void* pvParameters)
         gpio_set_level(BLINK_GPIO, 1);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+
+    vTaskDelete(NULL);
 }
