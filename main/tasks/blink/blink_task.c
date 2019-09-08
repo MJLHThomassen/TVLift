@@ -6,7 +6,19 @@
 
 #include <driver/gpio.h>
 
+#include <services/status_service.h>
+
 static const char* TAG = BLINK_TASK_TAG;
+
+static float blinkOnPercentage = 0;
+
+static void on_service_status_changed(const service_info_t* info)
+{
+    if(info->state == STATUS_SERVICE_STATE_ACTIVE)
+    {
+        blinkOnPercentage = 1;
+    }
+}
 
 static void blink_init()
 {
@@ -15,11 +27,14 @@ static void blink_init()
 
     // Set the GPIO as a push/pull output
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+
+    // Register to status service
+    status_service_register(on_service_status_changed);
 }
 
 void blink_task_main(void* pvParameters)
 {
-    ESP_LOGD(TAG, "Starting task");
+    ESP_LOGI(TAG, "Starting task");
     ESP_LOGV(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
     blink_init();
     
@@ -29,11 +44,11 @@ void blink_task_main(void* pvParameters)
     {
         // Blink off (output low)
         gpio_set_level(BLINK_GPIO, 0);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay((1- blinkOnPercentage) * 1000 / portTICK_PERIOD_MS);
 
         // Blink on (output high)
         gpio_set_level(BLINK_GPIO, 1);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(blinkOnPercentage * 1000 / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);

@@ -6,7 +6,7 @@
 #define BLINK_GPIO 2
 
 #define BLINK_TASK_TAG "Blink"
-#define BLINK_TASK_STACK_SIZE_KB 8
+#define BLINK_TASK_STACK_SIZE_KB 2
 
 void blink_task_main(void* pvParameters);
 

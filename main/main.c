@@ -46,9 +46,6 @@ static void system_event_handler(void* arg, esp_event_base_t event_base, int32_t
     {
         ESP_LOGI(TAG, "WIFI_EVENT: WIFI_EVENT_STA_START");
         
-        // Set hostname
-        ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, hostname));
-
         // Connect wifi to access point
         ESP_ERROR_CHECK(esp_wifi_connect());
     }
@@ -62,8 +59,14 @@ static void system_event_handler(void* arg, esp_event_base_t event_base, int32_t
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
         ESP_LOGI(TAG, "IP_EVENT: IP_EVENT_STA_GOT_IP");
+
+        // Print out assigned ip address
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "Got IP:%s", ip4addr_ntoa(&event->ip_info.ip));
+
+        // Set hostname
+        ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, hostname));
+
     }
 }
 
@@ -182,6 +185,7 @@ void app_main()
 
     initialise_spiffs();
     initialise_mdns();
+    initialise_wifi();
 
     TaskHandle_t blinkTaskHandle = NULL; 
     xTaskCreatePinnedToCore(
@@ -202,9 +206,6 @@ void app_main()
         tskIDLE_PRIORITY+12,
         &webserverTaskHandle,
         PRO_CPU_NUM);
-
-    // Initialise wifi after all tasks are created since some might depend on ceratin events
-    initialise_wifi();
 
     for(;;)
     {

@@ -11,13 +11,17 @@
 
 #include <mongoose.h>
 
+#include <services/status_service.h>
+
 #include "shared.h"
 #include "controllers/lift_controller.h"
 #include "controllers/upload_controller.h"
 
 #define WEBROOT "/spiffs/www/"
+#define WEBSERVER_THREAD_TAG "WebserverThread"
 #define WEBSERVER_THREAD_STACK_SIZE_KB 8
 
+static service_handle_t serviceHandle;
 static TaskHandle_t webserverTaskHandle = NULL;
 static TaskHandle_t webserverThreadHandle = NULL;
 static SemaphoreHandle_t webserverControlSemaphore = NULL;
@@ -54,10 +58,11 @@ static void webserver_ev_handler(struct mg_connection* c, int ev, void* ev_data,
 
 static void webserver_thread(void* pvParameters)
 {    
+    
+    ESP_LOGI(TAG, "Webserver polling loop started");
+
     for (;;)
     {
-        ESP_LOGI(TAG, "Webserver polling loop started");
-
         // Webserver event loop
         mg_mgr_poll(&manager, 100);
 
@@ -97,7 +102,7 @@ static void start_webserver()
     // Start the webserver thread
     BaseType_t taskCreateResult = xTaskCreatePinnedToCore(
         webserver_thread,
-        WEBSERVER_TASK_TAG,
+        WEBSERVER_THREAD_TAG,
         WEBSERVER_THREAD_STACK_SIZE_KB * STACK_KB,
         NULL,
         tskIDLE_PRIORITY+12,
@@ -152,7 +157,7 @@ static void ip_event_sta_got_ip(void* arg, esp_event_base_t event_base, int32_t 
     xSemaphoreTake(webserverControlSemaphore, portMAX_DELAY);
 
     // Start the web server
-    if (webserverThreadHandle != NULL)
+    if (webserverThreadHandle == NULL)
     {
         start_webserver();
     }
@@ -162,6 +167,9 @@ static void ip_event_sta_got_ip(void* arg, esp_event_base_t event_base, int32_t 
 
 static void webserver_init()
 {
+    // Register to status service
+    serviceHandle = status_service_add_service("webserver");
+
     // Get our own task handle
     webserverTaskHandle = xTaskGetCurrentTaskHandle();
 
@@ -175,9 +183,12 @@ static void webserver_init()
 
 void webserver_task_main(void* pvParameters)
 {
-    ESP_LOGD(TAG, "Starting task");
+    ESP_LOGI(TAG, "Starting task");
     ESP_LOGV(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
     webserver_init();
+
+    // Signal status service we are ready
+    status_service_set_service_state(serviceHandle, STATUS_SERVICE_STATE_ACTIVE);
 
     ESP_LOGD(TAG, "Starting task loop");
     ESP_LOGV(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));

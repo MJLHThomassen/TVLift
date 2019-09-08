@@ -4,6 +4,8 @@ idf_component_register(
     
     "ota/ota_service.c"
 
+    "services/status_service.c"
+
     "tasks/blink/blink_task.c"
     
     "tasks/webserver/webserver_task.c"
