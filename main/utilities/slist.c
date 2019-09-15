@@ -1,7 +1,5 @@
 #include "slist.h"
 
-#include <stddef.h>
-
 typedef struct slist_node
 {
     struct slist_node* next;
@@ -28,6 +26,7 @@ void slist_add(slist list, void* item)
 
     list->last->next = newNode;
     list->last = newNode;
+    list->count++;
 }
 
 size_t slist_count(const slist list)

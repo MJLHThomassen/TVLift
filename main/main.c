@@ -6,27 +6,32 @@
 #include <soc/soc.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "esp_log.h"
-#include "esp_system.h"
-#include "esp_event.h"
-#include "esp_vfs_dev.h"
+#include <esp_log.h>
+#include <esp_system.h>
+#include <esp_event.h>
+#include <nvs_flash.h>
+#include <esp_vfs_dev.h>
+#include <esp_vfs_fat.h>
+#include <esp_spiffs.h>
+#include <driver/sdmmc_host.h>
+#include <driver/sdspi_host.h>
+#include <sdmmc_cmd.h>
 
-#include "nvs_flash.h"
-
-#include "esp_spiffs.h"
-
-#include "mdns.h"
-
-#include "esp_wifi.h"
+#include <mdns.h>
+#include <esp_wifi.h>
 
 #include "sdkconfig.h"
 #include "tasks/blink/blink_task.h"
 #include "tasks/webserver/webserver_task.h"
 
+#define PIN_NUM_MISO 19
+#define PIN_NUM_MOSI 23
+#define PIN_NUM_CLK  18
+#define PIN_NUM_CS   5
+
 const char hostname[] = "tvlift";
 
 static const char* TAG = "APP";
-
 static bool shuttingDown = false;
 
 static void shutdown_handler(void)
@@ -81,35 +86,81 @@ static void initialise_spiffs(void)
     
     // Use settings defined above to initialize and mount SPIFFS filesystem.
     // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
-    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+    esp_err_t err = esp_vfs_spiffs_register(&conf);
 
-    if (ret != ESP_OK) 
+    if (err != ESP_OK) 
     {
-        if (ret == ESP_FAIL) 
+        if (err == ESP_FAIL) 
         {
             ESP_LOGE(TAG, "Failed to mount or format filesystem");
         }
-        else if (ret == ESP_ERR_NOT_FOUND) 
+        else if (err == ESP_ERR_NOT_FOUND) 
         {
             ESP_LOGE(TAG, "Failed to find SPIFFS partition");
         }
         else 
         {
-            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(err));
         }
         return;
     }
 
     size_t total = 0, used = 0;
-    ret = esp_spiffs_info(NULL, &total, &used);
-    if (ret != ESP_OK) 
+    err = esp_spiffs_info(NULL, &total, &used);
+    if (err != ESP_OK) 
     {
-        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(err));
     }
     else 
     {
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
+}
+
+static void initialise_sdcard(void)
+{    
+    ESP_LOGI(TAG, "Using SPI peripheral");
+
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+
+    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
+    slot_config.gpio_miso = PIN_NUM_MISO;
+    slot_config.gpio_mosi = PIN_NUM_MOSI;
+    slot_config.gpio_sck  = PIN_NUM_CLK;
+    slot_config.gpio_cs   = PIN_NUM_CS;
+    
+    // Options for mounting the filesystem.
+    // If format_if_mount_failed is set to true, SD card will be partitioned and
+    // formatted in case when mounting fails.
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = false,
+        .max_files = 5,
+        .allocation_unit_size = 16 * 1024
+    };
+
+    // Use settings defined above to initialize SD card and mount FAT filesystem.
+    // Note: esp_vfs_fat_sdmmc_mount is an all-in-one convenience function.
+    // Please check its source code and implement error recovery when developing
+    // production applications.
+    sdmmc_card_t* card;
+    esp_err_t err = esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, &card);
+
+    if (err != ESP_OK)
+    {
+        if (err == ESP_FAIL)
+        {
+            ESP_LOGE(TAG, "Failed to mount filesystem. "
+                "If you want the card to be formatted, set format_if_mount_failed = true.");
+        } else
+        {
+            ESP_LOGE(TAG, "Failed to initialize the card (%s). "
+                "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(err));
+        }
+        return;
+    }
+
+    // Card has been initialized, print its properties
+    sdmmc_card_print_info(stdout, card);
 }
 
 static void initialise_mdns(void)
@@ -164,7 +215,7 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_LOGI(TAG, "Starting App");
 
@@ -184,6 +235,7 @@ void app_main()
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     initialise_spiffs();
+    initialise_sdcard();
     initialise_mdns();
     initialise_wifi();
 

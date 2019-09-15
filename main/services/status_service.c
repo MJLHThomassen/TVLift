@@ -3,11 +3,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-typedef struct service_info_list_item_t
-{
-    service_info_t* item;
-    struct service_info_list_item_t* next;
-} service_info_list_item_t;
+static service_handle_t handleCounter = 0;
+static slist_service_info_t _services = NULL;
 
 typedef struct service_changed_registration_list_item_t
 {
@@ -16,54 +13,49 @@ typedef struct service_changed_registration_list_item_t
     struct service_changed_registration_list_item_t* next;
 } service_changed_registration_list_item_t;
 
-static service_handle_t handleCounter = 0;
-static service_info_list_item_t* registeredServices = NULL;
-static service_info_list_item_t* lastService = NULL;
-
 static status_service_registration_handle_t registrationCounter = 0;
 static service_changed_registration_list_item_t* registrations = NULL;
 static service_changed_registration_list_item_t* lastRegistration = NULL;
 
-static service_info_t* find_service(service_handle_t handle)
-{
-    service_info_list_item_t* service = registeredServices;
-    while(service != NULL && service->next != NULL)
-    {
-        if(service->item->handle == handle)
-        {
-            return service->item;
-        }
-        service = service->next;
-    }
-
-    return NULL;
-}
-
 service_handle_t status_service_add_service(const char* name)
 {
-    if(lastService == NULL)
+    if(_services == NULL)
     {
-        registeredServices = (service_info_list_item_t*) malloc(sizeof(service_info_list_item_t));
-        lastService = registeredServices;
+        slist_service_info_t_new(&_services);
     }
 
     service_handle_t handle = handleCounter++;
-    lastService->item = (service_info_t*) malloc(sizeof(service_info_t));
-    lastService->item->name = name;
-    lastService->item->handle = handle;
-    lastService->item->state = STATUS_SERVICE_STATE_INACTIVE;
 
-    lastService->next = (service_info_list_item_t*) malloc(sizeof(service_info_list_item_t));
-    lastService->next->item = NULL;
-    lastService->next->next = NULL;
-    lastService = lastService->next;
+    service_info_t* item = (service_info_t*) malloc(sizeof(service_info_t));
+    item->name = name;
+    item->handle = handle;
+    item->state = STATUS_SERVICE_STATE_INACTIVE;
+
+    slist_service_info_t_add(_services, item);
 
     return handle;
 }
 
-const service_info_t* status_service_get_service_into(service_handle_t handle)
+void status_service_remove_service(service_handle_t handle)
 {
-    return find_service(handle);
+
+}
+
+const service_info_t* status_service_get_service_info(service_handle_t handle)
+{
+    service_info_t* info;
+    return slist_service_info_t_find(_services, , &info);
+
+    return info;
+}
+
+const slist_service_info_t status_services_get_services(slist_service_info_t* services)
+{
+    slist_service_info_t_new(services);
+
+    slist_service_info_t_add(services, registeredServices->item);
+
+    return services;
 }
 
 void status_service_set_service_state(service_handle_t handle, status_service_state_t state)
@@ -77,11 +69,6 @@ void status_service_set_service_state(service_handle_t handle, status_service_st
         registration->item(serviceInfo);
         registration = registration->next;
     }
-}
-
-void status_service_remove_service(service_handle_t handle)
-{
-
 }
 
 status_service_registration_handle_t status_service_register(on_service_status_changed_t callback)

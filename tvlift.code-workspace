@@ -31,7 +31,25 @@
 			"esp_flash_partitions.h": "c",
 			"freertos.h": "c",
 			"soc.h": "c",
-			"task.h": "c"
+			"task.h": "c",
+			"slist.h": "c",
+			"esp_event.h": "c",
+			"sdkconfig.h": "c",
+			"sdmmc_host.h": "c",
+			"sdmmc_cmd.h": "c",
+			"sdmmc_types.h": "c",
+			"list": "c",
+			"map": "cpp",
+			"optional": "c",
+			"istream": "c",
+			"ostream": "c",
+			"ratio": "c",
+			"system_error": "c",
+			"array": "c",
+			"functional": "c",
+			"tuple": "c",
+			"type_traits": "c",
+			"utility": "c"
 		},
 		"git.ignoreLimitWarning": true
 	}

@@ -97,5 +97,5 @@ void lift_controller_register_uri_handlers(struct mg_connection* nc)
     register_uri_handler(nc, &speed_get_handler_info);
 
     // Initialize lift
-    lift_add_device(26, 18, 19, 16, 17, &liftHandle);
+    lift_add_device(26, 21, 22, 16, 17, &liftHandle);
 }

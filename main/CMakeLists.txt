@@ -13,6 +13,8 @@ idf_component_register(
     "tasks/webserver/controllers/lift_controller.c"
     "tasks/webserver/controllers/upload_controller.c"
 
+    "utilities/slist.c"
+
     "main.c"
 
     INCLUDE_DIRS ".")
