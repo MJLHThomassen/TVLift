@@ -5,3 +5,6 @@ IndentCaseLabels: false
 ColumnLimit: 0
 IndentWidth: 4
 SpaceAfterCStyleCast: false
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true

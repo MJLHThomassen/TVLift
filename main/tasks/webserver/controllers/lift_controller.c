@@ -15,7 +15,7 @@ static lift_device_t liftHandle;
 
 static uint32_t getSpeed(struct http_message* message)
 {
-    uint32_t speed = 6400;
+    uint32_t speed = 3200;
     char param[32];
 
     if(mg_get_http_var(&message->query_string, "speed", param, sizeof(param)) > 0)
@@ -28,27 +28,56 @@ static uint32_t getSpeed(struct http_message* message)
 
 static void up_post_handler(struct mg_connection* nc, struct http_message* message)
 {
-    uint32_t speed = getSpeed(message);
-    lift_set_speed(&liftHandle, speed);
+    lift_err_t liftErr;
 
-    lift_up(&liftHandle);
+    uint32_t speed = getSpeed(message);
+    liftErr = lift_set_speed(&liftHandle, speed);
+    if(liftErr != LIFT_OK)
+    {
+        mg_http_send_error(nc, 500, "Can not set requested speed.");
+        return;
+    }
+
+    liftErr = lift_up(&liftHandle);
+    if(liftErr != LIFT_OK)
+    {
+        mg_http_send_error(nc, 500, "Can not move lift.");
+        return;
+    }
 
     mg_send_head(nc, 200, 0, NULL);
 }
 
 static void down_post_handler(struct mg_connection* nc, struct http_message* message)
 {
-    uint32_t speed = getSpeed(message);
-    lift_set_speed(&liftHandle, speed);
+    lift_err_t liftErr;
 
-    lift_down(&liftHandle);
+    uint32_t speed = getSpeed(message);
+    liftErr = lift_set_speed(&liftHandle, speed);
+    if(liftErr != LIFT_OK)
+    {
+        mg_http_send_error(nc, 500, "Can not set requested speed.");
+        return;
+    }
+
+    liftErr = lift_down(&liftHandle);
+    if(liftErr != LIFT_OK)
+    {
+        mg_http_send_error(nc, 500, "Can not move lift.");
+        return;
+    }
 
     mg_send_head(nc, 200, 0, NULL);
 }
 
 static void stop_post_handler(struct mg_connection* nc, struct http_message* message)
 {
-    lift_stop(&liftHandle);
+    lift_err_t liftErr = lift_stop(&liftHandle);
+    if(liftErr != LIFT_OK)
+    {
+        mg_http_send_error(nc, 500, "Can not stop lift.");
+        return;
+    }
 
     mg_send_head(nc, 200, 0, NULL);
 }

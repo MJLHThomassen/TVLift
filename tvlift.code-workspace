@@ -49,7 +49,12 @@
 			"functional": "c",
 			"tuple": "c",
 			"type_traits": "c",
-			"utility": "c"
+			"utility": "c",
+			"stdlib.h": "c",
+			"esp_event_legacy.h": "c",
+			"mdns.h": "c",
+			"netif.h": "c",
+			"shared.h": "c"
 		},
 		"git.ignoreLimitWarning": true
 	}

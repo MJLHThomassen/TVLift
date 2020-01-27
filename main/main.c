@@ -21,6 +21,7 @@
 #include <esp_wifi.h>
 
 #include "sdkconfig.h"
+#include "services/logger_service.h"
 #include "tasks/blink/blink_task.h"
 #include "tasks/webserver/webserver_task.h"
 
@@ -67,11 +68,10 @@ static void system_event_handler(void* arg, esp_event_base_t event_base, int32_t
 
         // Print out assigned ip address
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "Got IP:%s", ip4addr_ntoa(&event->ip_info.ip));
+        ESP_LOGI(TAG, "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
 
         // Set hostname
         ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, hostname));
-
     }
 }
 
@@ -190,10 +190,12 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &system_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &system_event_handler, NULL));
 
-    // Initialise tcpip adapter
-    tcpip_adapter_init();
+    // Initialise ip adapter
+    esp_netif_init();
 
     // Initialise wifi
+    esp_netif_create_default_wifi_sta();
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
@@ -205,18 +207,20 @@ static void initialise_wifi(void)
         },
     };
 
-    ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
-
     // Configure wifi
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
 
     // Start wifi
     ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "Setting WiFi configuration SSID: %s", wifi_config.sta.ssid);
 }
 
 void app_main(void)
 {
+    logger_service_init();
+    
     ESP_LOGI(TAG, "Starting App");
 
     // Initialize NVS

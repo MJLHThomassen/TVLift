@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { Component, Vue, Prop } from "vue-property-decorator";
 
 @Component({})
 export default class About extends Vue {
@@ -19,7 +19,7 @@ export default class About extends Vue {
 
   public constructor() {
     super();
-    this.name = 'Maarten Thomassen';
+    this.name = "Maarten Thomassen";
   }
 
   private doit(name: string): void {

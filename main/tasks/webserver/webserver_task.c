@@ -11,6 +11,7 @@
 
 #include <mongoose.h>
 
+#include <services/logger_service.h>
 #include <services/status_service.h>
 
 #include "shared.h"
@@ -37,9 +38,16 @@ static struct mg_serve_http_opts http_server_opts = {
 
 static const char* TAG = WEBSERVER_TASK_TAG;
 
+static void websocket_sink(const char* message, const size_t len, void* user_data)
+{
+    struct mg_connection* websocketLoggerConnection = (struct mg_connection*) user_data;
+    mg_send_websocket_frame(websocketLoggerConnection, WEBSOCKET_OP_TEXT, message, len);
+}
+
 static void webserver_ev_handler(struct mg_connection* c, int ev, void* ev_data, void* user_data)
 {
     struct http_message* message = (struct http_message*) ev_data;
+    struct websocket_message* wm = (struct websocket_message *) ev_data;
 
     switch (ev)
     {
@@ -53,7 +61,37 @@ static void webserver_ev_handler(struct mg_connection* c, int ev, void* ev_data,
             mg_serve_http(c, message, http_server_opts);
         }
         break;
+
+    case MG_EV_WEBSOCKET_HANDSHAKE_DONE:
+        // New websocket connection
+        ESP_LOGI(TAG, "Websocket Connect");
+        sink_handle_t handle = logger_service_register_sink(websocket_sink, (void*)c);
+
+        // Save the handle
+        sink_handle_t* handlePtr = (sink_handle_t*)malloc(sizeof(*handlePtr));
+        *handlePtr = handle;
+        c->user_data = handlePtr;
+
+        break;
+        
+    case MG_EV_WEBSOCKET_FRAME:
+        ESP_LOGI(TAG, "Websocket Frame");
+        break;
+    
+    case MG_EV_CLOSE: 
+        // Disconnect
+        if (c->flags & MG_F_IS_WEBSOCKET)
+        {
+            logger_service_unregister_sink((sink_handle_t*)c->user_data);
+            ESP_LOGI(TAG, "Websocket Disconnect");
+
+            // Remove the handle
+            free(c->user_data);
+            c->user_data = NULL;
+        }
+      break;
     }
+    
 }
 
 static void webserver_thread(void* pvParameters)

@@ -4,6 +4,7 @@ idf_component_register(
     
     "ota/ota_service.c"
 
+    "services/logger_service.c"
     "services/status_service.c"
 
     "tasks/blink/blink_task.c"
@@ -13,6 +14,7 @@ idf_component_register(
     "tasks/webserver/controllers/lift_controller.c"
     "tasks/webserver/controllers/upload_controller.c"
 
+    "utilities/map.c"
     "utilities/slist.c"
 
     "main.c"

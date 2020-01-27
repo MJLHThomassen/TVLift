@@ -26,7 +26,7 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
     case MULTIPART_REQUEST_MESSAGE_TYPE_PART_BEGIN:
     {
         otaState = (ota_state_t*)userData;
-        if(strcmp(part->var_name, "app") == 0)
+        if(strcmp(part->var_name, "firmware") == 0)
         {
             otaErr = ota_service_app_update_begin(otaState);
         }

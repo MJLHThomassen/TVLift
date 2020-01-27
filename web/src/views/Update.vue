@@ -9,12 +9,6 @@
               Drag your file here to begin<br>or click to browse
             </p>
           </div>
-          <div class="dropbox">
-            <input id="spiffs-file-input" type="file" @change="spiffsFileChanged"/>
-            <p>
-              Drag your file here to begin<br>or click to browse
-            </p>
-          </div>
           <button v-bind:disabled="!canUpdate" type="button" class="button primary" @click="update">Update!</button>
       </fieldset>
       <fieldset v-if="isUpdating || updateErrorMessage" class="col-sm-12 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
@@ -48,11 +42,10 @@ export default class LiftControls extends Vue
 
   public get canUpdate(): boolean
   {
-    return this.selectedFirmwareFile != null && this.selectedSpiffsFile != null && !this.isUpdating;
+    return this.selectedFirmwareFile != null && !this.isUpdating;
   }
 
   private selectedFirmwareFile: File | null = null;
-  private selectedSpiffsFile: File | null = null;
   private isUpdating: boolean = false;
   private updateProgress: number = 0;
   private updateErrorMessage: string = "";
@@ -67,19 +60,9 @@ export default class LiftControls extends Vue
     }
   }
 
-  private spiffsFileChanged(event: Event): void
-  {
-    const fileInput = event.target as HTMLInputElement;
-
-    if (fileInput != null && fileInput.files != null)
-    {
-      this.selectedSpiffsFile = fileInput.files[0];
-    }
-  }
-
   private async update(): Promise<void>
   {
-    if (this.selectedFirmwareFile == null || this.selectedSpiffsFile == null)
+    if (this.selectedFirmwareFile == null)
     {
       return;
     }
@@ -88,8 +71,7 @@ export default class LiftControls extends Vue
     this.isUpdating = true;
 
     const data = new FormData();
-    data.set("app", this.selectedFirmwareFile, this.selectedFirmwareFile.name);
-    data.set("spiffs", this.selectedSpiffsFile, this.selectedSpiffsFile.name);
+    data.set("firmware", this.selectedFirmwareFile, this.selectedFirmwareFile.name);
 
     try
     {
@@ -102,6 +84,7 @@ export default class LiftControls extends Vue
             this.updateProgress = Math.round(100 * progressEvent.loaded / progressEvent.total);
           },
         });
+
       console.log(response);
     }
     catch (e)

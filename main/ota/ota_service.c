@@ -53,9 +53,11 @@ ota_service_err_t ota_service_app_update_write(ota_state_t* otaState, const char
         {
             // All header bytes received, read header and begin update
             ESP_LOGI(TAG, "Read header");
+            esp_image_segment_header_t newAppImageSegmentHeader;
             esp_app_desc_t new_app_info;
             memcpy(&new_app_info, &otaState->app_header[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)], sizeof(esp_app_desc_t));
             ESP_LOGI(TAG, "New firmware version: %s", new_app_info.version);
+            ESP_LOGI(TAG, "Length: %s", new_app_info.version);
 
             err = esp_ota_begin(otaState->app_update_partition, OTA_SIZE_UNKNOWN, &otaState->app_update_handle);
             if (err != ESP_OK) 

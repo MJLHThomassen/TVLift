@@ -11,18 +11,28 @@
 #define DIR_UP 1
 
 static const char TAG[] = "lift";
+static const ledc_timer_bit_t DUTY_RESOLUTION = LEDC_TIMER_8_BIT;
 
-static void lift_start_pul(const lift_device_t* const handle, uint32_t speed)
+static lift_err_t lift_start_pul(const lift_device_t* const handle, uint32_t speed)
 {
+    esp_err_t err;
+
+    ESP_LOGI(TAG, "Start lift pulse at %i Hz", speed);
+
     // Configure PWM timer
     ledc_timer_config_t timer_conf = {
         .speed_mode         = LEDC_HIGH_SPEED_MODE,
-        .duty_resolution    = LEDC_TIMER_1_BIT,
+        .duty_resolution    = DUTY_RESOLUTION,
         .timer_num          = LEDC_TIMER_0,
+        .clk_cfg            = LEDC_AUTO_CLK,
         .freq_hz            = speed
     };
 
-    ESP_ERROR_CHECK(ledc_timer_config(&timer_conf));
+    err = ledc_timer_config(&timer_conf);
+    if(err != ESP_OK)
+    {
+        return LIFT_FAIL;
+    }
 
     // Configure PWM channel
     ledc_channel_config_t channel_config = {
@@ -31,16 +41,25 @@ static void lift_start_pul(const lift_device_t* const handle, uint32_t speed)
         .channel    = LEDC_CHANNEL_0,
         .intr_type  = LEDC_INTR_DISABLE,
         .timer_sel  = LEDC_TIMER_0,
-        .duty       = 1,
+        .duty       = 1 << (DUTY_RESOLUTION - 1),
         .hpoint     = 0
     };
 
-    ESP_ERROR_CHECK(ledc_channel_config(&channel_config));
+    // After ledc_channel_config has succesfully returned, the PWM signal is generated on the selected GPIO
+    err = ledc_channel_config(&channel_config);
+    if(err != ESP_OK)
+    {
+        return LIFT_FAIL;
+    }
+
+    return LIFT_OK;
 }
 
-static void lift_stop_pul(const lift_device_t* const handle)
+static lift_err_t lift_stop_pul(const lift_device_t* const handle)
 {
-    ESP_ERROR_CHECK(ledc_stop(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 0));
+    esp_err_t err = ledc_stop(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 0);
+
+    return err == ESP_OK ? LIFT_OK : LIFT_FAIL;
 }
 
 static void IRAM_ATTR endstop_down_isr_handler(void* arg)
@@ -65,7 +84,7 @@ static void IRAM_ATTR endstop_up_isr_handler(void* arg)
     }
 }
 
-void lift_add_device(
+lift_err_t lift_add_device(
     gpio_num_t gpioEna,
     gpio_num_t gpioDir,
     gpio_num_t gpioPul,
@@ -73,6 +92,8 @@ void lift_add_device(
     gpio_num_t gpioEndstopUp,
     lift_device_t* const handle)
 {
+    esp_err_t err;
+
     ESP_LOGI(TAG, "Adding lift device %x", (unsigned int)handle);
 
     // Configure output pins with pullup
@@ -85,11 +106,15 @@ void lift_add_device(
         .intr_type = GPIO_PIN_INTR_DISABLE
     };
     
-    ESP_ERROR_CHECK(gpio_config(&pullupOutputIoConf));
+    err = gpio_config(&pullupOutputIoConf);
+    if(err != ESP_OK)
+    {
+        return LIFT_FAIL;
+    }
 
     // Configure output pins without pullup
     // Set mode = GPIO_MODE_INPUT_OUTPUT so we can read back active value
-    gpio_config_t noPullOutputIoConf = {
+    gpio_config_t noPullupOutputIoConf = {
         .pin_bit_mask = BIT(gpioPul),
         .mode = GPIO_MODE_INPUT_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
@@ -97,18 +122,26 @@ void lift_add_device(
         .intr_type = GPIO_PIN_INTR_DISABLE
     };
     
-    ESP_ERROR_CHECK(gpio_config(&noPullOutputIoConf));
+    err = gpio_config(&noPullupOutputIoConf);
+    if(err != ESP_OK)
+    {
+        return LIFT_FAIL;
+    }
 
     // Configure input pins with interrupt on negative edge
-    gpio_config_t interruptInputIoConf = {
-        .pin_bit_mask = BIT(gpioEndstopDown) | BIT(gpioEndstopUp),
-        .mode= GPIO_MODE_INPUT,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_PIN_INTR_NEGEDGE
-    };
+    // gpio_config_t interruptInputIoConf = {
+    //     .pin_bit_mask = BIT(gpioEndstopDown) | BIT(gpioEndstopUp),
+    //     .mode= GPIO_MODE_INPUT,
+    //     .pull_up_en = GPIO_PULLUP_DISABLE,
+    //     .pull_down_en = GPIO_PULLDOWN_DISABLE,
+    //     .intr_type = GPIO_PIN_INTR_NEGEDGE
+    // };
     
-    ESP_ERROR_CHECK(gpio_config(&interruptInputIoConf));
+    // err = gpio_config(&interruptInputIoConf);
+    // if(err != ESP_OK)
+    // {
+    //     return LIFT_FAIL;
+    // }
 
     // Initialize all values in handle
     handle->gpioEna = gpioEna;
@@ -116,29 +149,48 @@ void lift_add_device(
     handle->gpioPul = gpioPul;
     handle->gpioEndstopDown = gpioEndstopDown;
     handle->gpioEndstopUp = gpioEndstopUp;
-    handle->speed = 6400;
+    handle->speed = 320;
+
+    return LIFT_OK;
 
     // Install gpio isr service
-    ESP_ERROR_CHECK(gpio_install_isr_service(0));
+    err = gpio_install_isr_service(0);
+    if(err != ESP_OK)
+    {
+        return LIFT_FAIL;
+    }
 
     // Hook isr handlers
-    ESP_ERROR_CHECK(gpio_isr_handler_add(gpioEndstopDown, endstop_down_isr_handler, (void*) handle));
-    ESP_ERROR_CHECK(gpio_isr_handler_add(gpioEndstopUp, endstop_up_isr_handler, (void*) handle));
+    err = gpio_isr_handler_add(gpioEndstopDown, endstop_down_isr_handler, (void*) handle);
+    if(err != ESP_OK)
+    {
+        return LIFT_FAIL;
+    }
+
+    err = gpio_isr_handler_add(gpioEndstopUp, endstop_up_isr_handler, (void*) handle);
+    if(err != ESP_OK)
+    {
+        return LIFT_FAIL;
+    }
+
+    return LIFT_OK;
 }
 
-void lift_remove_device(const lift_device_t* const handle)
+lift_err_t lift_remove_device(const lift_device_t* const handle)
 {
     ESP_LOGI(TAG, "Removing lift device %x", (unsigned int)handle);
+
+    return LIFT_OK;
 }
 
-void lift_up(const lift_device_t* const handle)
+lift_err_t lift_up(const lift_device_t* const handle)
 {
     ESP_LOGI(TAG, "Lift going up.");
 
     // Check if the up endstop is not active
     if(gpio_get_level(handle->gpioEndstopUp) == ENDSTOP_ACTIVE)
     {
-        return;
+        //return;
     }
 
     // Enable the Lift
@@ -148,17 +200,17 @@ void lift_up(const lift_device_t* const handle)
     gpio_set_level(handle->gpioDir, DIR_UP);
 
     // Start moving
-    lift_start_pul(handle, handle->speed);
+    return lift_start_pul(handle, handle->speed);
 }
 
-void lift_down(const lift_device_t* const handle)
+lift_err_t lift_down(const lift_device_t* const handle)
 {
     ESP_LOGI(TAG, "Lift going down.");
 
- // Check if the up endstop is not active
+    // Check if the up endstop is not active
     if(gpio_get_level(handle->gpioEndstopDown) == ENDSTOP_ACTIVE)
     {
-        return;
+        //return;
     }
 
     // Enable the Lift
@@ -168,26 +220,30 @@ void lift_down(const lift_device_t* const handle)
     gpio_set_level(handle->gpioDir, DIR_DOWN);
 
     // Start moving
-    lift_start_pul(handle, handle->speed);
+    return lift_start_pul(handle, handle->speed);
 }
 
-void lift_stop(const lift_device_t* const handle)
+lift_err_t lift_stop(const lift_device_t* const handle)
 {
     ESP_LOGI(TAG, "Lift stopping.");
 
     // Stop moving
-    lift_stop_pul(handle);
+    return lift_stop_pul(handle);
 }
 
-void lift_disable(const lift_device_t* const handle)
+lift_err_t lift_disable(const lift_device_t* const handle)
 {
     ESP_LOGI(TAG, "Lift being disabled.");
 
     // Disable the Lift motors
     gpio_set_level(handle->gpioEna, 1);
+
+    return LIFT_OK;
 }
 
-void lift_set_speed(lift_device_t* const handle, uint32_t speed)
+lift_err_t lift_set_speed(lift_device_t* const handle, uint32_t speed)
 {
     handle->speed = speed;
+
+    return LIFT_OK;
 }

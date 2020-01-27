@@ -37,8 +37,8 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Ref } from 'vue-property-decorator';
-import 'mini.css/dist/mini-dark.min.css';
+import { Component, Vue, Ref } from "vue-property-decorator";
+import "mini.css/dist/mini-dark.min.css";
 
 @Component({})
 export default class App extends Vue
@@ -53,6 +53,7 @@ export default class App extends Vue
   --link-color: #42b983;
   --border-color: grey;
 
+  --info-color: rgb(13, 152, 194);
   --waning-color: #ffca28;
   --error-color: #b71c1c;
 
