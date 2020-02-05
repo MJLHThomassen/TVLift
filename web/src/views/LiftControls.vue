@@ -31,17 +31,17 @@ export default class LiftControls extends Vue
 {
   private liftGoUp(): void
   {
-    axios.post("/lift/up");
+    axios.post("/api/lift/up");
   }
 
   private liftGoDown(): void
   {
-    axios.post("/lift/down");
+    axios.post("/api/lift/down");
   }
 
   private liftStop(): void
   {
-    axios.post("/lift/stop");
+    axios.post("/api/lift/stop");
   }
 }
 </script>

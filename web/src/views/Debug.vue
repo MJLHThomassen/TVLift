@@ -1,102 +1,151 @@
 <template>
-    <div class="debug row">
-      <div class="col-sm">
-          <h1>Debug</h1>
-          <p>Log</p>
-          <pre class="console"><span v-for="line in consoleLines" v-bind:style="line.css">{{ line.text }}</span></pre>
-      </div>
+    <div class="debug">
+      <h2>Debug</h2>
+      <wifi-off-icon class="disconnected-icon" v-if="webSocket === null"></wifi-off-icon>
+      <console :entries="consoleLines"></console>
     </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Prop } from "vue-property-decorator";
+import { timeout } from "@/services/sleep";
+import Console from "@/components/Console.vue";
+import { WifiOffIcon } from "vue-feather-icons";
 import * as Ansicolor from "ansicolor";
 
-@Component({})
+@Component({
+  components: {
+    Console,
+    WifiOffIcon,
+  },
+})
 export default class Debug extends Vue
 {
-  private readonly WebsocktUri: string = "ws://" + location.host;
+  private readonly WebsocktUri: string = "ws://" + location.host + "/api";
 
+  private reconnectWebSocket: boolean = true;
   private webSocket: WebSocket | null = null;
-  private consoleText: string = "";
-  private consoleLines: any[] = [];
+  private consoleLines: string[] = [];
 
   public constructor()
   {
     super();
+  }
 
-    console.log("Setting up websocket to ", this.WebsocktUri);
+  public async mounted(): Promise<void>
+  {
+    this.initialiseWebSocket();
+  }
 
+  public beforeDestroy(): void
+  {
+    this.destroyWebSocket();
+  }
+
+  private async initialiseWebSocket(): Promise<void>
+  {
+    this.webSocket = await this.connectWebSocket();
+
+    this.webSocket.onclose = (e) =>
+    {
+      this.webSocket = null;
+
+      if (this.reconnectWebSocket)
+      {
+        // Re-initialize a new websocket
+        this.initialiseWebSocket();
+      }
+    };
+
+    this.webSocket.onmessage = this.onWebSocketMessage;
+  }
+
+  private destroyWebSocket(): void
+  {
+    this.reconnectWebSocket = false;
+    this.webSocket?.close();
+  }
+
+  private connectWebSocket(): Promise<WebSocket>
+  {
+    // 2s connection/retry timeout
+    const websocketTimeoutTimeMs = 2000;
+
+    // Construct a websocket
+    let webSocket: WebSocket;
     try
     {
-      this.webSocket = new WebSocket(this.WebsocktUri);
+      webSocket = new WebSocket(this.WebsocktUri);
     }
     catch (e)
     {
-      this.consoleText = "Could not connect to debug socket: \n" + e;
-      return;
+      // If there is an exception (SECURITY_ERR), retry immediately
+      // TODO: Is this the best way to handle this?
+      return this.connectWebSocket();
     }
 
-    setTimeout(() =>
+    // Construct a promise that resolves when the websocket is succesfully connected,
+    // or rejects when the websocket could not connect due to an error.
+    const websocketPromise = new Promise<WebSocket>((resolve, reject) =>
     {
-      if (this.webSocket != null)
+      webSocket.onopen = (e) => { resolve(webSocket); };
+      webSocket.onerror = (e) => { reject(); };
+    });
+
+    // Race between websocket connection/error and a timeout.
+    // Immediately returns the websocket via the resolve of the websocketPromise if everything goes ok.
+    // Executes the catch if either the websocket connection errored, or the timeout was reached.
+    return Promise
+      .race([websocketPromise, timeout<WebSocket>(websocketTimeoutTimeMs)])
+      .catch((reason) =>
       {
-        if (this.webSocket.readyState !== WebSocket.OPEN)
+        if (this.reconnectWebSocket)
         {
-          this.webSocket.close();
+          // Reconnect if timeout or error ocurred.
+          return this.connectWebSocket();
         }
-      }
-    }, 1000);
-
-    this.webSocket.onopen = this.onWebSocketOpen;
-    this.webSocket.onerror = this.onWebSocketError;
-    this.webSocket.onmessage = this.onWebSocketMessage;
-    this.webSocket.onclose = this.onWebSocketClose;
-  }
-
-  private onWebSocketOpen(event: Event): void
-  {
-    this.addConsoleLines("Connected\n");
-  }
-
-  private onWebSocketError(event: Event): void
-  {
-    this.addConsoleLines("Could not connect to debug socket\n");
+        else
+        {
+          // If we don't want to reconnect, return the (failed) socket.
+          return webSocket;
+        }
+      });
   }
 
   private onWebSocketMessage(event: MessageEvent): void
   {
-    this.addConsoleLines(event.data);
-  }
-
-  private onWebSocketClose(event: Event): void
-  {
-    this.addConsoleLines("Closed\n");
-  }
-
-  private addConsoleLines(text: string): void
-  {
-    const parsed = Ansicolor.parse(text);
-    console.log(parsed.spans);
-    this.consoleLines.push(...parsed.spans);
+    this.consoleLines.push(event.data);
   }
 }
 </script>
 
 <style lang="scss">
-.debug
+.debug 
 {
-  text-align: left;
-  
-  .console
-  {
-    
-    height: 250px;
+    max-height: 100%;
+    overflow: hidden;
 
-    span
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+
+    text-align: center;
+
+    >*
     {
-      font-family: 'Courier New', Courier, monospace;
+      flex-grow: 0;
+      flex-shrink: 0;
+      flex-basis: 0;
     }
-  }
+
+    .disconnected-icon 
+    {
+        position: absolute;
+        right: 0;
+        margin: calc(.5rem + 4px) calc(.5rem + 4px) 0 0;
+        color: var(--error-color);
+    }
 }
 </style>

@@ -13,7 +13,8 @@
   "dependencies": {
     "ansicolor": "^1.1.92",
     "axios": "^0.19.0",
-    "core-js": "^2.6.5",
+    "core-js": "^3.6.4",
+    "esm": "^3.2.25",
     "mini.css": "^3.0.1",
     "vue": "^2.6.11",
     "vue-class-component": "^7.2.2",
@@ -23,19 +24,30 @@
     "vuex": "^3.1.2"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^3.12.1",
-    "@vue/cli-plugin-typescript": "^3.12.1",
-    "@vue/cli-service": "^3.12.1",
+    "@vue/cli-plugin-babel": "^4.1.2",
+    "@vue/cli-plugin-typescript": "^4.1.2",
+    "@vue/cli-service": "^4.1.2",
     "compression-webpack-plugin": "^3.1.0",
+    "concurrently": "^5.1.0",
+    "express": "^4.17.1",
     "node-sass": "^4.13.1",
-    "sass-loader": "^7.1.0",
+    "npm-run-all": "^4.1.5",
+    "sass-loader": "^8.0.2",
     "typescript": "^3.7.5",
-    "vue-template-compiler": "^2.6.11"
+    "uuid": "^3.4.0",
+    "vue-template-compiler": "^2.6.11",
+    "ws": "^7.2.1"
   },
   "postcss": {
     "plugins": {
       "autoprefixer": {}
     }
+  },
+  "prettier": {
+    "tabWidth": 4,
+    "singleQuote": false,
+    "bracketSpacing": true,
+    "arrowParens": "avoid"
   },
   "browserslist": [
     "> 1%",

@@ -5,7 +5,7 @@
 
 #include <esp_log.h>
 
-#define rootUri "/upload/"
+#define controllerUri "/lift/"
 
 static char TAG[] = __FILE__;
 
@@ -104,7 +104,7 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
     case MULTIPART_REQUEST_MESSAGE_TYPE_END:
     {
         // Redirect client to reset page
-        mg_http_send_redirect(nc, 301, mg_mk_str("/"),mg_mk_str(NULL));
+        mg_http_send_redirect(nc, 301, mg_mk_str("/"), mg_mk_str(NULL));
         nc->flags |= MG_F_SEND_AND_CLOSE;
 
         // Restart the system
@@ -135,13 +135,13 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
 
 static ota_state_t ota_state;
 static multipart_request_uri_handler_info_t firmware_post_handler_info = {
-    .uri = rootUri "firmware",
+    .uri = controllerUri "firmware",
     .method = HTTP_POST,
     .handler = firmware_post_handler,
     .user_data = &ota_state
     };
 
-void upload_controller_register_uri_handlers(struct mg_connection* nc)
+void upload_controller_register_uri_handlers(struct mg_connection* nc, const char* rootUri)
 {
-    register_multipart_request_uri_handler(nc, &firmware_post_handler_info);
+    register_multipart_request_uri_handler(nc, rootUri, &firmware_post_handler_info);
 }

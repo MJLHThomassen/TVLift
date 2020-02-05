@@ -11,11 +11,13 @@
         }
     ],
     "tasks": [
-        {    
+        {
             "label": "Build",
             "type": "shell",
             "command": "idf.py",
-            "args": [ "build" ],
+            "args": [
+                "build"
+            ],
             "presentation": {
                 "reveal": "always"
             },
@@ -33,47 +35,64 @@
             }
         },
         {
-            "label": "Clean",            
+            "label": "Clean",
             "type": "shell",
             "command": "idf.py",
-            "args": [ "clean"  ],
+            "args": [
+                "clean"
+            ],
             "presentation": {
                 "reveal": "always",
                 "showReuseMessage": true
-            },
+            }
         },
         {
             "label": "Flash",
             "type": "shell",
             "command": "idf.py",
-            "args": [ "-p", "${config:port}", "flash"],
+            "args": [
+                "-p",
+                "${config:port}",
+                "flash"
+            ],
             "presentation": {
-                "reveal": "always",
+                "reveal": "always"
             }
         },
         {
             "label": "Flash & Monitor",
             "type": "shell",
             "command": "idf.py",
-            "args": [ "-p", "${config:port}", "flash", "monitor"],
+            "args": [
+                "-p",
+                "${config:port}",
+                "flash",
+                "monitor"
+            ],
             "presentation": {
-                "reveal": "always",
+                "reveal": "always"
             }
         },
         {
             "label": "Monitor",
-            "type":"shell",
+            "type": "shell",
             "command": "idf.py",
-            "args": [ "-p", "${config:port}", "monitor" ],
+            "args": [
+                "-p",
+                "${config:port}",
+                "monitor"
+            ],
             "presentation": {
-                "reveal": "always",
+                "reveal": "always"
             }
         },
         {
             "label": "Menuconfig",
-            "type":"shell",
+            "type": "shell",
             "command": "idf.py",
-            "args": [ "menuconfig" ],
+            "args": [
+                "menuconfig"
+            ],
             "presentation": {
                 "reveal": "always",
                 "focus": true

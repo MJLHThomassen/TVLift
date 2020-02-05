@@ -134,8 +134,8 @@ static void start_webserver()
     
     // Set URI handlers
     ESP_LOGI(TAG, "Registering URI handlers");
-    lift_controller_register_uri_handlers(webserverConnection);
-    upload_controller_register_uri_handlers(webserverConnection);
+    lift_controller_register_uri_handlers(webserverConnection, "/api");
+    upload_controller_register_uri_handlers(webserverConnection, "/api");
 
     // Start the webserver thread
     BaseType_t taskCreateResult = xTaskCreatePinnedToCore(

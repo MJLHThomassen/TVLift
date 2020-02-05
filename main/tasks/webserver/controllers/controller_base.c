@@ -1,5 +1,6 @@
 #include "controller_base.h"
 
+#include <string.h>
 #include <esp_log.h>
 
 static void http_request_handler(struct mg_connection* nc, int ev, void* ev_data, void* user_data)
@@ -88,12 +89,16 @@ static void http_multipart_request_handler(struct mg_connection* nc, int ev, voi
     }
 }
 
-void register_uri_handler(struct mg_connection* nc, uri_handler_info_t* uriHandlerInfo)
+void register_uri_handler(struct mg_connection* nc, const char* rootUri, uri_handler_info_t* uriHandlerInfo)
 {
-    mg_register_http_endpoint(nc, uriHandlerInfo->uri, http_request_handler, uriHandlerInfo);
+    char* uri = (char*)calloc(strlen(rootUri) + strlen(uriHandlerInfo->uri) + 1, sizeof(char));
+    mg_register_http_endpoint(nc, strcat(strcat(uri, rootUri), uriHandlerInfo->uri), http_request_handler, uriHandlerInfo);
+    free(uri);
 }
 
-void register_multipart_request_uri_handler(struct mg_connection* nc, multipart_request_uri_handler_info_t* uriHandlerInfo)
+void register_multipart_request_uri_handler(struct mg_connection* nc, const char* rootUri, multipart_request_uri_handler_info_t* uriHandlerInfo)
 {
-    mg_register_http_endpoint(nc, uriHandlerInfo->uri, http_multipart_request_handler, uriHandlerInfo);
+    char* uri = (char*)calloc(strlen(rootUri) + strlen(uriHandlerInfo->uri) + 1, sizeof(char));
+    mg_register_http_endpoint(nc, strcat(strcat(uri, rootUri), uriHandlerInfo->uri), http_multipart_request_handler, uriHandlerInfo);
+    free(uri);
 }

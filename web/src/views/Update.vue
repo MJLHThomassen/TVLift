@@ -9,7 +9,7 @@
               Drag your file here to begin<br>or click to browse
             </p>
           </div>
-          <button v-bind:disabled="!canUpdate" type="button" class="button primary" @click="update">Update!</button>
+          <button :disabled="!canUpdate" type="button" class="button primary" @click="update">Update!</button>
       </fieldset>
       <fieldset v-if="isUpdating || updateErrorMessage" class="col-sm-12 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
         <legend>Status</legend>

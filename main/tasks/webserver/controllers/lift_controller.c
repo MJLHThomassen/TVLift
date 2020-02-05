@@ -7,7 +7,7 @@
 
 #include "lift/lift.h"
 
-#define rootUri "/lift/"
+#define controllerUri "/lift/"
 
 static char TAG[] = __FILE__;
 
@@ -91,39 +91,39 @@ static void speed_get_handler(struct mg_connection* nc, struct http_message* mes
 }
 
 static uri_handler_info_t up_post_handler_info = {
-    .uri = rootUri "up",
+    .uri = controllerUri "up",
     .method = HTTP_POST,
     .handler = up_post_handler,
     .user_data = NULL
     };
 
 static uri_handler_info_t down_post_handler_info = {
-    .uri = rootUri "down",
+    .uri = controllerUri "down",
     .method = HTTP_POST,
     .handler = down_post_handler,
     .user_data = NULL
     };
 
 static uri_handler_info_t stop_post_handler_info = {
-    .uri = rootUri "stop",
+    .uri = controllerUri "stop",
     .method = HTTP_POST,
     .handler = stop_post_handler,
     .user_data = NULL
     };
 
 static uri_handler_info_t speed_get_handler_info = {
-    .uri = rootUri "speed",
+    .uri = controllerUri "speed",
     .method = HTTP_GET,
     .handler = speed_get_handler,
     .user_data = NULL
     };
 
-void lift_controller_register_uri_handlers(struct mg_connection* nc)
+void lift_controller_register_uri_handlers(struct mg_connection* nc, const char* rootUri)
 {
-    register_uri_handler(nc, &up_post_handler_info);
-    register_uri_handler(nc, &down_post_handler_info);
-    register_uri_handler(nc, &stop_post_handler_info);
-    register_uri_handler(nc, &speed_get_handler_info);
+    register_uri_handler(nc, rootUri, &up_post_handler_info);
+    register_uri_handler(nc, rootUri, &down_post_handler_info);
+    register_uri_handler(nc, rootUri, &stop_post_handler_info);
+    register_uri_handler(nc, rootUri, &speed_get_handler_info);
 
     // Initialize lift
     lift_add_device(26, 21, 22, 16, 17, &liftHandle);

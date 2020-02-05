@@ -44,7 +44,7 @@ typedef struct multipart_request_uri_handler_info_t
     void* user_data;
 } multipart_request_uri_handler_info_t;
 
-void register_uri_handler(struct mg_connection* nc, uri_handler_info_t* uriHandlerInfo);
-void register_multipart_request_uri_handler(struct mg_connection* nc, multipart_request_uri_handler_info_t* uriHandlerInfo);
+void register_uri_handler(struct mg_connection* nc, const char* rootUri, uri_handler_info_t* uriHandlerInfo);
+void register_multipart_request_uri_handler(struct mg_connection* nc, const char* rootUri, multipart_request_uri_handler_info_t* uriHandlerInfo);
 
 #endif // CONTROLLER_BASE_H

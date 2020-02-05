@@ -5,7 +5,7 @@
 		}
 	],
 	"settings": {
-		"port": "COM4",
+		"port": "COM5",
 		"terminal.integrated.shell.windows": "C:\\WINDOWS\\System32\\cmd.exe",
 		"terminal.integrated.shellArgs.windows": [
 			"/k",
@@ -56,6 +56,9 @@
 			"netif.h": "c",
 			"shared.h": "c"
 		},
-		"git.ignoreLimitWarning": true
+		"git.ignoreLimitWarning": true,
+		"files.exclude": {
+			"**/node_modules": true
+		}
 	}
 }
