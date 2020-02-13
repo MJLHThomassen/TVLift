@@ -29,7 +29,11 @@
         "random": "c",
         "*.tcc": "c",
         "string": "c",
-        "string_view": "c"
+        "string_view": "c",
+        "stdio.h": "c",
+        "assert.h": "c",
+        "cstring": "c",
+        "*.ipp": "c"
     },
     "git.ignoreLimitWarning": true
 }

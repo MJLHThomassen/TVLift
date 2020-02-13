@@ -2,7 +2,7 @@
     <div class="debug">
       <h2>Debug</h2>
       <wifi-off-icon class="disconnected-icon" v-if="webSocket === null"></wifi-off-icon>
-      <console :entries="consoleLines"></console>
+      <console :new-entry="newEntry"></console>
     </div>
 </template>
 
@@ -25,7 +25,7 @@ export default class Debug extends Vue
 
   private reconnectWebSocket: boolean = true;
   private webSocket: WebSocket | null = null;
-  private consoleLines: string[] = [];
+  private newEntry: string = "";
 
   public constructor()
   {
@@ -114,7 +114,7 @@ export default class Debug extends Vue
 
   private onWebSocketMessage(event: MessageEvent): void
   {
-    this.consoleLines.push(event.data);
+    this.newEntry = event.data;
   }
 }
 </script>

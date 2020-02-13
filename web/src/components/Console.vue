@@ -29,7 +29,7 @@ export default class Console extends Vue
   };
 
   @Prop()
-  private entries!: string[];
+  private newEntry!: string;
 
   private consoleLines: ConsoleLine[] = [];
 
@@ -38,17 +38,13 @@ export default class Console extends Vue
     super();
   }
 
-  public write(text: string): void
+  @Watch("newEntry")
+  private onEntriesChanged(value: string, oldValue: string): void
   {
-    this.addConsoleLines(text);
+    this.addConsoleLines(value);
   }
 
-  public writeLine(text: string): void
-  {
-    this.write(text + "\n");
-  }
-
-  private async addConsoleLines(text: string): Promise<void>
+    private async addConsoleLines(text: string): Promise<void>
   {
     const parsed = Ansicolor.parse(text);
 
@@ -64,18 +60,6 @@ export default class Console extends Vue
     await this.$nextTick();
 
     this.$refs.console.lastElementChild?.scrollIntoView(true);
-  }
-
-  @Watch("entries")
-  private onEntriesChanged(value: string[], oldValue: string[]): void
-  {
-    if (value.length === 0)
-    {
-      return;
-    }
-
-    value.forEach((x) => this.write(x));
-    this.entries.splice(0, this.entries.length);
   }
 }
 </script>

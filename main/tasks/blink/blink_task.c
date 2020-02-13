@@ -2,10 +2,10 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <esp_log.h>
 
 #include <driver/gpio.h>
 
+#include <services/logger_service.h>
 #include <services/status_service.h>
 
 static const char* TAG = BLINK_TASK_TAG;
@@ -34,12 +34,12 @@ static void blink_init()
 
 void blink_task_main(void* pvParameters)
 {
-    ESP_LOGI(TAG, "Starting task");
-    ESP_LOGV(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
+    LOG_I(TAG, "Starting task");
+    LOG_V(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
     blink_init();
     
-    ESP_LOGD(TAG, "Starting task loop");
-    ESP_LOGV(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
+    LOG_D(TAG, "Starting task loop");
+    LOG_V(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
     while (1)
     {
         // Blink off (output low)

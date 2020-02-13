@@ -14,6 +14,6 @@
 
 // Other Settings
 #define MG_ENABLE_CALLBACK_USERDATA 1
-#define CS_ENABLE_STDIO 0
+#define CS_ENABLE_STDIO 1
 
 #endif // MG_LOCALS_H

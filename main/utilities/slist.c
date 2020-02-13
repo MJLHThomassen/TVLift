@@ -1,5 +1,7 @@
 #include "slist.h"
 
+#include <assert.h>
+
 typedef struct slist_node_s
 {
     struct slist_node_s* next;
@@ -27,6 +29,8 @@ struct slist_iter_s
  */
 static void remove_node(slist list, slist_node node, slist_node prev)
 {
+    assert(prev->next == node);
+
     if(prev == NULL)
     {
         list->first = node->next;
@@ -133,7 +137,7 @@ util_err_t slist_copy_deep(const slist list, void (copyFn)(const void* item, voi
     slist_node node = list->first;
     while (node != NULL)
     {
-        void** newItem;
+        void* newItem;
         copyFn(node->item, &newItem);
 
         err = slist_add(newList, newItem);
@@ -182,6 +186,7 @@ util_err_t slist_add(slist list, void* item)
 
     return UTIL_OK;
 }
+
 util_err_t slist_remove(slist list, void* item)
 {
     slist_node prev = NULL;
@@ -200,7 +205,7 @@ util_err_t slist_remove(slist list, void* item)
     }
 
     // Remove it from the list
-    remove_node(list, prev, node);
+    remove_node(list, node, prev);
 
     return UTIL_OK;
 }
@@ -223,7 +228,7 @@ util_err_t slist_remove_at(slist list, size_t index)
     }
 
     // Remove it from the list
-    remove_node(list, prev, node);
+    remove_node(list, node, prev);
 
     return UTIL_OK;
 }

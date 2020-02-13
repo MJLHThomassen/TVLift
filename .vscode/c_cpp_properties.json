@@ -7,7 +7,7 @@
                 "${workspaceRoot}/**",
                 "${env:IDF_PATH}/components/**"
             ],
-            "intelliSenseMode": "gcc-x64",
+            "intelliSenseMode": "${default}",
             "browse": {
                 "path": [
                     "${workspaceRoot}",
@@ -18,7 +18,7 @@
                 "databaseFilename": "${workspaceRoot}/.vscode/browse.vc.db"
             },
             "compileCommands": "${workspaceFolder}/build/compile_commands.json",
-            "cStandard": "c99",
+            "cStandard": "c11",
             "cppStandard": "c++11",
             "defines": [
                 "MG_LOCALS=1"

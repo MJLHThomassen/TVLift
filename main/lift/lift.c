@@ -1,8 +1,9 @@
 #include "lift.h"
 
-#include <esp_log.h>
 #include <esp_err.h>
 #include <driver/ledc.h>
+
+#include <services/logger_service.h>
 
 #define ENDSTOP_ACTIVE 0
 #define ENDSTOP_INACTIVE  1
@@ -17,7 +18,7 @@ static lift_err_t lift_start_pul(const lift_device_t* const handle, uint32_t spe
 {
     esp_err_t err;
 
-    ESP_LOGI(TAG, "Start lift pulse at %i Hz", speed);
+    LOG_I(TAG, "Start lift pulse at %i Hz", speed);
 
     // Configure PWM timer
     ledc_timer_config_t timer_conf = {
@@ -94,7 +95,7 @@ lift_err_t lift_add_device(
 {
     esp_err_t err;
 
-    ESP_LOGI(TAG, "Adding lift device %x", (unsigned int)handle);
+    LOG_I(TAG, "Adding lift device %x", (unsigned int)handle);
 
     // Configure output pins with pullup
     // Set mode = GPIO_MODE_INPUT_OUTPUT so we can read back active value
@@ -178,14 +179,14 @@ lift_err_t lift_add_device(
 
 lift_err_t lift_remove_device(const lift_device_t* const handle)
 {
-    ESP_LOGI(TAG, "Removing lift device %x", (unsigned int)handle);
+    LOG_I(TAG, "Removing lift device %x", (unsigned int)handle);
 
     return LIFT_OK;
 }
 
 lift_err_t lift_up(const lift_device_t* const handle)
 {
-    ESP_LOGI(TAG, "Lift going up.");
+    LOG_I(TAG, "Lift going up.");
 
     // Check if the up endstop is not active
     if(gpio_get_level(handle->gpioEndstopUp) == ENDSTOP_ACTIVE)
@@ -205,7 +206,7 @@ lift_err_t lift_up(const lift_device_t* const handle)
 
 lift_err_t lift_down(const lift_device_t* const handle)
 {
-    ESP_LOGI(TAG, "Lift going down.");
+    LOG_I(TAG, "Lift going down.");
 
     // Check if the up endstop is not active
     if(gpio_get_level(handle->gpioEndstopDown) == ENDSTOP_ACTIVE)
@@ -225,7 +226,7 @@ lift_err_t lift_down(const lift_device_t* const handle)
 
 lift_err_t lift_stop(const lift_device_t* const handle)
 {
-    ESP_LOGI(TAG, "Lift stopping.");
+    LOG_I(TAG, "Lift stopping.");
 
     // Stop moving
     return lift_stop_pul(handle);
@@ -233,7 +234,7 @@ lift_err_t lift_stop(const lift_device_t* const handle)
 
 lift_err_t lift_disable(const lift_device_t* const handle)
 {
-    ESP_LOGI(TAG, "Lift being disabled.");
+    LOG_I(TAG, "Lift being disabled.");
 
     // Disable the Lift motors
     gpio_set_level(handle->gpioEna, 1);

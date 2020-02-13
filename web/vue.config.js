@@ -1,5 +1,9 @@
 const CompressionPlugin = require('compression-webpack-plugin');
 
+// Set environment variables
+process.env.VUE_APP_VERSION = Date().toString();
+
+// Modify configuration
 module.exports = {
     outputDir: "../main/data/www",
     productionSourceMap: false,

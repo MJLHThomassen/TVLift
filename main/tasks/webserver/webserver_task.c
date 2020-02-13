@@ -6,15 +6,14 @@
 #include <soc/soc.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <esp_log.h>
 #include <esp_event.h>
 
 #include <mongoose.h>
 
+#include <shared.h>
 #include <services/logger_service.h>
 #include <services/status_service.h>
 
-#include "shared.h"
 #include "controllers/lift_controller.h"
 #include "controllers/upload_controller.h"
 
@@ -47,7 +46,7 @@ static void websocket_sink(const char* message, const size_t len, void* user_dat
 static void webserver_ev_handler(struct mg_connection* c, int ev, void* ev_data, void* user_data)
 {
     struct http_message* message = (struct http_message*) ev_data;
-    struct websocket_message* wm = (struct websocket_message *) ev_data;
+    // struct websocket_message* wm = (struct websocket_message *) ev_data;
 
     switch (ev)
     {
@@ -64,26 +63,20 @@ static void webserver_ev_handler(struct mg_connection* c, int ev, void* ev_data,
 
     case MG_EV_WEBSOCKET_HANDSHAKE_DONE:
         // New websocket connection
-        ESP_LOGI(TAG, "Websocket Connect");
+        LOG_I(TAG, "Websocket Connect");
         sink_handle_t handle = logger_service_register_sink(websocket_sink, (void*)c);
 
         // Save the handle
-        sink_handle_t* handlePtr = (sink_handle_t*)malloc(sizeof(*handlePtr));
-        *handlePtr = handle;
-        c->user_data = handlePtr;
+        c->user_data = handle;
 
         break;
         
-    case MG_EV_WEBSOCKET_FRAME:
-        ESP_LOGI(TAG, "Websocket Frame");
-        break;
-    
     case MG_EV_CLOSE: 
         // Disconnect
         if (c->flags & MG_F_IS_WEBSOCKET)
         {
-            logger_service_unregister_sink((sink_handle_t*)c->user_data);
-            ESP_LOGI(TAG, "Websocket Disconnect");
+            logger_service_unregister_sink((sink_handle_t)c->user_data);
+            LOG_I(TAG, "Websocket Disconnect");
 
             // Remove the handle
             free(c->user_data);
@@ -97,7 +90,7 @@ static void webserver_ev_handler(struct mg_connection* c, int ev, void* ev_data,
 static void webserver_thread(void* pvParameters)
 {    
     
-    ESP_LOGI(TAG, "Webserver polling loop started");
+    LOG_I(TAG, "Webserver polling loop started");
 
     for (;;)
     {
@@ -111,7 +104,7 @@ static void webserver_thread(void* pvParameters)
             break;
         }
     }
-    ESP_LOGI(TAG, "Webserver polling loop stopped");
+    LOG_I(TAG, "Webserver polling loop stopped");
 
     // Notify the webserver task we have stopped
     xTaskNotifyGive(webserverTaskHandle);
@@ -122,18 +115,18 @@ static void webserver_thread(void* pvParameters)
 
 static void start_webserver()
 {
-    ESP_LOGI(TAG, "Starting webserver");
+    LOG_I(TAG, "Starting webserver");
 
     // Initialise the webserver manager
     mg_mgr_init(&manager, NULL);
 
     // Set up webserver connection
-    ESP_LOGI(TAG, "Starting webserver on port: '%d'", 80);
+    LOG_I(TAG, "Starting webserver on port: '%d'", 80);
     webserverConnection = mg_bind(&manager, "80", webserver_ev_handler, NULL);
     mg_set_protocol_http_websocket(webserverConnection);
     
     // Set URI handlers
-    ESP_LOGI(TAG, "Registering URI handlers");
+    LOG_I(TAG, "Registering URI handlers");
     lift_controller_register_uri_handlers(webserverConnection, "/api");
     upload_controller_register_uri_handlers(webserverConnection, "/api");
 
@@ -149,11 +142,11 @@ static void start_webserver()
 
     if(taskCreateResult == pdPASS)
     {
-        ESP_LOGI(TAG, "Webserver started");
+        LOG_I(TAG, "Webserver started");
     }
     else
     {
-        ESP_LOGE(TAG, "Webserver could not be started");
+        LOG_E(TAG, "Webserver could not be started");
         
         // Free webserver resources
         mg_mgr_free(&manager);
@@ -162,7 +155,7 @@ static void start_webserver()
 
 static void stop_webserver()
 {
-    ESP_LOGI(TAG, "Stopping webserver");
+    LOG_I(TAG, "Stopping webserver");
 
     // Notify webserver thread to stop
     xTaskNotifyGive(webserverThreadHandle);
@@ -173,7 +166,7 @@ static void stop_webserver()
     // Free webserver resources
     mg_mgr_free(&manager);
 
-    ESP_LOGI(TAG, "Webserver stopped");
+    LOG_I(TAG, "Webserver stopped");
 }
 
 static void wifi_event_sta_disconnected(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
@@ -221,15 +214,15 @@ static void webserver_init()
 
 void webserver_task_main(void* pvParameters)
 {
-    ESP_LOGI(TAG, "Starting task");
-    ESP_LOGV(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
+    LOG_I(TAG, "Starting task");
+    LOG_V(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
     webserver_init();
 
     // Signal status service we are ready
     status_service_set_service_state(serviceHandle, STATUS_SERVICE_STATE_ACTIVE);
 
-    ESP_LOGD(TAG, "Starting task loop");
-    ESP_LOGV(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
+    LOG_D(TAG, "Starting task loop");
+    LOG_V(TAG, "Free stack space: %i", uxTaskGetStackHighWaterMark(NULL));
     for (;;)
     {
         vTaskSuspend(NULL);

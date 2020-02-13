@@ -2,10 +2,11 @@
 #include "controller_base.h"
 
 #include <stdio.h>
-#include <esp_log.h>
+
 #include <frozen.h>
 
-#include "lift/lift.h"
+#include <services/logger_service.h>
+#include <lift/lift.h>
 
 #define controllerUri "/lift/"
 

@@ -50,29 +50,34 @@ static void system_event_handler(void* arg, esp_event_base_t event_base, int32_t
 
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
-        ESP_LOGI(TAG, "WIFI_EVENT: WIFI_EVENT_STA_START");
+        LOG_I(TAG, "WIFI_EVENT: WIFI_EVENT_STA_START");
         
         // Connect wifi to access point
         ESP_ERROR_CHECK(esp_wifi_connect());
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
-        ESP_LOGI(TAG, "WIFI_EVENT: WIFI_EVENT_STA_DISCONNECTED");
+        LOG_I(TAG, "WIFI_EVENT: WIFI_EVENT_STA_DISCONNECTED");
 
         // Re-connect wifi to access point
         ESP_ERROR_CHECK(esp_wifi_connect());
     }
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
-        ESP_LOGI(TAG, "IP_EVENT: IP_EVENT_STA_GOT_IP");
+        LOG_I(TAG, "IP_EVENT: IP_EVENT_STA_GOT_IP");
 
         // Print out assigned ip address
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
+        LOG_I(TAG, "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
 
         // Set hostname
         ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, hostname));
     }
+}
+
+static void serial_logger(const char* message, const size_t len, void* user_data)
+{
+    printf(message);
 }
 
 static void initialise_spiffs(void)
@@ -92,15 +97,15 @@ static void initialise_spiffs(void)
     {
         if (err == ESP_FAIL) 
         {
-            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+            LOG_E(TAG, "Failed to mount or format filesystem");
         }
         else if (err == ESP_ERR_NOT_FOUND) 
         {
-            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+            LOG_E(TAG, "Failed to find SPIFFS partition");
         }
         else 
         {
-            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(err));
+            LOG_E(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(err));
         }
         return;
     }
@@ -109,17 +114,17 @@ static void initialise_spiffs(void)
     err = esp_spiffs_info(NULL, &total, &used);
     if (err != ESP_OK) 
     {
-        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(err));
+        LOG_E(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(err));
     }
     else 
     {
-        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+        LOG_I(TAG, "Partition size: total: %d, used: %d", total, used);
     }
 }
 
 static void initialise_sdcard(void)
 {    
-    ESP_LOGI(TAG, "Using SPI peripheral");
+    LOG_I(TAG, "Using SPI peripheral");
 
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
 
@@ -149,11 +154,11 @@ static void initialise_sdcard(void)
     {
         if (err == ESP_FAIL)
         {
-            ESP_LOGE(TAG, "Failed to mount filesystem. "
+            LOG_E(TAG, "Failed to mount filesystem. "
                 "If you want the card to be formatted, set format_if_mount_failed = true.");
         } else
         {
-            ESP_LOGE(TAG, "Failed to initialize the card (%s). "
+            LOG_E(TAG, "Failed to initialize the card (%s). "
                 "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(err));
         }
         return;
@@ -170,7 +175,7 @@ static void initialise_mdns(void)
 
     // Set mDNS hostname
     ESP_ERROR_CHECK(mdns_hostname_set(hostname));
-    ESP_LOGI(TAG, "mDNS hostname set to: %s", hostname);
+    LOG_E(TAG, "mDNS hostname set to: %s", hostname);
 
     // Set default mDNS instance name
     ESP_ERROR_CHECK(mdns_instance_name_set("TV Lift"));
@@ -191,10 +196,11 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &system_event_handler, NULL));
 
     // Initialise ip adapter
-    esp_netif_init();
+    // esp_netif_init();
+    tcpip_adapter_init();
 
     // Initialise wifi
-    esp_netif_create_default_wifi_sta();
+    // esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -214,14 +220,15 @@ static void initialise_wifi(void)
     // Start wifi
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "Setting WiFi configuration SSID: %s", wifi_config.sta.ssid);
+    LOG_I(TAG, "Setting WiFi configuration SSID: %s", wifi_config.sta.ssid);
 }
 
 void app_main(void)
 {
     logger_service_init();
+    logger_service_register_sink(serial_logger, NULL);
     
-    ESP_LOGI(TAG, "Starting App");
+    LOG_I(TAG, "Starting App");
 
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
@@ -239,7 +246,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     initialise_spiffs();
-    initialise_sdcard();
+    //initialise_sdcard();
     initialise_mdns();
     initialise_wifi();
 

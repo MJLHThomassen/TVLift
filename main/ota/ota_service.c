@@ -2,10 +2,11 @@
 
 #include <string.h>
 
-#include <esp_log.h>
 #include <esp_err.h>
 #include <esp_flash_partitions.h>
 #include <esp_partition.h>
+
+#include <services/logger_service.h>
 
 static char TAG[] = __FILE__;
 
@@ -19,11 +20,11 @@ ota_service_err_t ota_service_initialize(ota_state_t* otaState)
 
     if (configured != running) 
     {
-        ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08x, but running from offset 0x%08x", configured->address, running->address);
-        ESP_LOGW(TAG, "(This can happen if either the OTA boot data or preferred boot image become corrupted somehow.)");
+        LOG_W(TAG, "Configured OTA boot partition at offset 0x%08x, but running from offset 0x%08x", configured->address, running->address);
+        LOG_W(TAG, "(This can happen if either the OTA boot data or preferred boot image become corrupted somehow.)");
     }
 
-    ESP_LOGI(TAG, "Running partition %s", running->label);
+    LOG_I(TAG, "Running partition %s", running->label);
 
     // Initialize otaState
     memset(otaState, 0, sizeof(ota_state_t));
@@ -52,20 +53,20 @@ ota_service_err_t ota_service_app_update_write(ota_state_t* otaState, const char
         if(otaState->nr_of_bytes_received + length >= sizeof(otaState->app_header))
         {
             // All header bytes received, read header and begin update
-            ESP_LOGI(TAG, "Read header");
+            LOG_I(TAG, "Read header");
             esp_image_segment_header_t newAppImageSegmentHeader;
             esp_app_desc_t new_app_info;
             memcpy(&new_app_info, &otaState->app_header[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)], sizeof(esp_app_desc_t));
-            ESP_LOGI(TAG, "New firmware version: %s", new_app_info.version);
-            ESP_LOGI(TAG, "Length: %s", new_app_info.version);
+            LOG_I(TAG, "New firmware version: %s", new_app_info.version);
+            LOG_I(TAG, "Length: %s", new_app_info.version);
 
             err = esp_ota_begin(otaState->app_update_partition, OTA_SIZE_UNKNOWN, &otaState->app_update_handle);
             if (err != ESP_OK) 
             {
-                ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
+                LOG_E(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
                 return OTA_SERVICE_FAIL;
             }
-            ESP_LOGI(TAG, "esp_ota_begin succeeded");
+            LOG_I(TAG, "esp_ota_begin succeeded");
 
             // Write the first piece of the ota
             ESP_ERROR_CHECK(esp_ota_write(otaState->app_update_handle, (const void *)otaState->app_header, sizeof(otaState->app_header)));
@@ -79,7 +80,7 @@ ota_service_err_t ota_service_app_update_write(ota_state_t* otaState, const char
     
     // Update the amount of bytes we have received
     otaState->nr_of_bytes_received += length;
-    ESP_LOGI(TAG, "Read %i", otaState->nr_of_bytes_received);
+    LOG_I(TAG, "Read %i", otaState->nr_of_bytes_received);
 
     return OTA_SERVICE_OK;
 }
@@ -88,11 +89,11 @@ ota_service_err_t ota_service_app_update_end(ota_state_t* otaState)
 {
     if (esp_ota_end(otaState->app_update_handle) != ESP_OK) 
     {
-        ESP_LOGE(TAG, "esp_ota_end failed!");
+        LOG_E(TAG, "esp_ota_end failed!");
         return OTA_SERVICE_ERR_OTA_END_FAILED;
     }
 
-    ESP_LOGI(TAG, "App Done!");
+    LOG_I(TAG, "App Done!");
     return OTA_SERVICE_OK;
 }
 
@@ -115,10 +116,10 @@ ota_service_err_t ota_service_finalize(ota_state_t* otaState)
 {
     if (esp_ota_set_boot_partition(otaState->app_update_partition)!= ESP_OK) 
     {
-        ESP_LOGE(TAG, "esp_ota_set_boot_partition failed!");
+        LOG_E(TAG, "esp_ota_set_boot_partition failed!");
         return OTA_SERVICE_ERR_SET_BOOT_PARTITON_FAILED;
     }
 
-    ESP_LOGI(TAG, "OTA Done!");
+    LOG_I(TAG, "OTA Done!");
     return OTA_SERVICE_OK;
 }

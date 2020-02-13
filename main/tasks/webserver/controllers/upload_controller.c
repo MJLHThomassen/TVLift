@@ -1,11 +1,10 @@
 #include "upload_controller.h"
 #include "controller_base.h"
 
-#include "ota/ota_service.h"
+#include <ota/ota_service.h>
+#include <services/logger_service.h>
 
-#include <esp_log.h>
-
-#define controllerUri "/lift/"
+#define controllerUri "/upload/"
 
 static char TAG[] = __FILE__;
 
@@ -108,7 +107,7 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
         nc->flags |= MG_F_SEND_AND_CLOSE;
 
         // Restart the system
-        ESP_LOGI(TAG, "Prepare to restart system!");
+        LOG_I(TAG, "Prepare to restart system!");
         esp_restart();
         return;
     }

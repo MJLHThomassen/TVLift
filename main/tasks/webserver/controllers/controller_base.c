@@ -1,7 +1,8 @@
 #include "controller_base.h"
 
 #include <string.h>
-#include <esp_log.h>
+
+#include <services/logger_service.h>
 
 static void http_request_handler(struct mg_connection* nc, int ev, void* ev_data, void* user_data)
 {
