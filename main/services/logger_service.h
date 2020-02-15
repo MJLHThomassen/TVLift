@@ -3,9 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
+#include <stdarg.h>
 
 #define LOGGER_SERVICE_COLOR_BLACK     "30"
 #define LOGGER_SERVICE_COLOR_RED       "31"
@@ -25,13 +23,13 @@
 #define LOGGER_SERVICE_COLOR_D         LOGGER_SERVICE_COLOR(LOGGER_SERVICE_COLOR_WHITE)
 #define LOGGER_SERVICE_COLOR_V         LOGGER_SERVICE_FAINT(LOGGER_SERVICE_COLOR_WHITE)
 
-#define LOGGER_SERVICE_FORMAT(letter, format)  LOGGER_SERVICE_COLOR_ ## letter #letter " (%lld) (%s) %s: " format LOGGER_SERVICE_RESET_COLOR "\n"
+#define LOGGER_SERVICE_FORMAT(letter, format)  LOGGER_SERVICE_COLOR_ ## letter #letter " (%s) %s: " format LOGGER_SERVICE_RESET_COLOR "\n"
 
-#define LOG_E( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_ERROR,   tag, LOGGER_SERVICE_FORMAT(E, format), logger_service_log_timestamp(), pcTaskGetTaskName(NULL), tag, ##__VA_ARGS__)
-#define LOG_W( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_WARN,    tag, LOGGER_SERVICE_FORMAT(W, format), logger_service_log_timestamp(), pcTaskGetTaskName(NULL), tag, ##__VA_ARGS__)
-#define LOG_I( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_INFO,    tag, LOGGER_SERVICE_FORMAT(I, format), logger_service_log_timestamp(), pcTaskGetTaskName(NULL), tag, ##__VA_ARGS__)
-#define LOG_D( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_DEBUG,   tag, LOGGER_SERVICE_FORMAT(D, format), logger_service_log_timestamp(), pcTaskGetTaskName(NULL), tag, ##__VA_ARGS__)
-#define LOG_V( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_VERBOSE, tag, LOGGER_SERVICE_FORMAT(V, format), logger_service_log_timestamp(), pcTaskGetTaskName(NULL), tag, ##__VA_ARGS__)
+#define LOG_E( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_ERROR,   LOGGER_SERVICE_FORMAT(E, format), logger_service_timestamp, tag, ##__VA_ARGS__)
+#define LOG_W( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_WARN,    LOGGER_SERVICE_FORMAT(W, format), logger_service_timestamp, tag, ##__VA_ARGS__)
+#define LOG_I( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_INFO,    LOGGER_SERVICE_FORMAT(I, format), logger_service_timestamp, tag, ##__VA_ARGS__)
+#define LOG_D( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_DEBUG,   LOGGER_SERVICE_FORMAT(D, format), logger_service_timestamp, tag, ##__VA_ARGS__)
+#define LOG_V( tag, format, ... ) logger_service_log(LOGGER_SERVICE_LOGLEVEL_VERBOSE, LOGGER_SERVICE_FORMAT(V, format), logger_service_timestamp, tag, ##__VA_ARGS__)
 
 typedef enum logger_service_loglevel_e
 {
@@ -46,9 +44,11 @@ typedef enum logger_service_loglevel_e
 typedef struct sink_s* sink_handle_t;
 typedef void (*logger_sink_t)(const char* message, const size_t len, void* user_data);
 
+extern char logger_service_timestamp[20];
+
 void        logger_service_init(void);
-void        logger_service_log(logger_service_loglevel_t level, const char* tag, const char* format, ...);
-int64_t     logger_service_log_timestamp();
+int         logger_service_log(logger_service_loglevel_t level, const char* format, ...);
+int         logger_service_vlog(logger_service_loglevel_t level, const char* format, va_list vlist);
 
 sink_handle_t logger_service_register_sink(logger_sink_t callback, void* user_data);
 void          logger_service_unregister_sink(sink_handle_t handle);

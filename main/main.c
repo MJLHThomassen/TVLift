@@ -2,6 +2,7 @@
 #include "shared.h"
 
 #include <stdio.h>
+#include <time.h>
 
 #include <soc/soc.h>
 #include <freertos/FreeRTOS.h>
@@ -19,6 +20,7 @@
 
 #include <mdns.h>
 #include <esp_wifi.h>
+#include <esp_sntp.h>
 
 #include "sdkconfig.h"
 #include "services/logger_service.h"
@@ -75,9 +77,51 @@ static void system_event_handler(void* arg, esp_event_base_t event_base, int32_t
     }
 }
 
-static void serial_logger(const char* message, const size_t len, void* user_data)
+static int logger_service_vprintf(const char * format, va_list list)
+{
+    // Get level from first character of format
+    logger_service_loglevel_t level;
+    switch(format[0])
+    {
+        case 'E':
+            level = LOGGER_SERVICE_LOGLEVEL_ERROR;
+            break;
+        case 'W':
+            level = LOGGER_SERVICE_LOGLEVEL_WARN;
+            break;
+        case 'I':
+            level = LOGGER_SERVICE_LOGLEVEL_INFO;
+            break;
+        case 'D':
+            level = LOGGER_SERVICE_LOGLEVEL_DEBUG;
+            break;
+        case 'V':
+            level = LOGGER_SERVICE_LOGLEVEL_VERBOSE;
+            break;
+        default:
+            level = LOGGER_SERVICE_LOGLEVEL_NONE;
+            break;
+    }
+
+    return logger_service_vlog(level, format, list);
+}
+
+static void serial_logger_sink(const char* message, const size_t len, void* user_data)
 {
     printf(message);
+}
+
+void time_sync_notification_cb(struct timeval *tv)
+{
+    LOG_I(TAG, "SNTP Synchronisation notification recieved");
+}
+
+static void initialize_sntp(void)
+{
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_set_time_sync_notification_cb(time_sync_notification_cb);
+    sntp_init();
 }
 
 static void initialise_spiffs(void)
@@ -175,7 +219,7 @@ static void initialise_mdns(void)
 
     // Set mDNS hostname
     ESP_ERROR_CHECK(mdns_hostname_set(hostname));
-    LOG_E(TAG, "mDNS hostname set to: %s", hostname);
+    LOG_I(TAG, "mDNS hostname set to: %s", hostname);
 
     // Set default mDNS instance name
     ESP_ERROR_CHECK(mdns_instance_name_set("TV Lift"));
@@ -226,8 +270,9 @@ static void initialise_wifi(void)
 void app_main(void)
 {
     logger_service_init();
-    logger_service_register_sink(serial_logger, NULL);
-    
+    logger_service_register_sink(serial_logger_sink, NULL);
+    esp_log_set_vprintf(logger_service_vprintf);
+
     LOG_I(TAG, "Starting App");
 
     // Initialize NVS
@@ -246,9 +291,10 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     initialise_spiffs();
-    //initialise_sdcard();
+    initialise_sdcard();
     initialise_mdns();
     initialise_wifi();
+    initialize_sntp();
 
     TaskHandle_t blinkTaskHandle = NULL; 
     xTaskCreatePinnedToCore(

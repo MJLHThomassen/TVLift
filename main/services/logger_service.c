@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <esp_log.h>
-#include <esp_timer.h>
+#include <time.h>
 
 #include <utilities/slist.h>
+
+char logger_service_timestamp[20] = "";
 
 struct sink_s
 {
@@ -17,8 +17,52 @@ struct sink_s
 
 static slist sinks;
 
-static void logger_service_log_to_sinks(const char* str, size_t len)
+void logger_service_init(void)
 {
+    // ESP_LOGI("logger", "Initializing Logger");
+    slist_new(&sinks);
+}
+
+int logger_service_log(logger_service_loglevel_t level, const char* format, ...)
+{
+    va_list list;
+    va_start(list, format);
+    int len = logger_service_vlog(level, format, list);
+    va_end(list);
+
+    return len;
+}
+
+int logger_service_vlog(logger_service_loglevel_t level, const char* format, va_list vlist)
+{
+    char* str = (char*) calloc(512, sizeof(char));
+
+    if(str == NULL)
+    {
+        // ESP_LOGW("Logger", "Could not allocate memory for writing to logger service sinks");
+        return -1;
+    }
+
+    // Update timestamp so it has the correct value if it is present in vlist
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    if(now != (time_t)(-1) && timeinfo.tm_year >= (2020 - 1900))
+    {
+        // Time is properly set, print it
+        strftime(logger_service_timestamp, 20, "%F %T", gmtime(&now));
+    }
+    else
+    {
+        // Time is not properly set, print the clock
+        snprintf(logger_service_timestamp, 20, "%li", clock());
+    }
+
+    // Format string
+    int len = vsnprintf(str, 512, format, vlist);
+
     // Print to sinks 
     sink_handle_t sink;
     slist_iter sinksIter;
@@ -37,61 +81,12 @@ static void logger_service_log_to_sinks(const char* str, size_t len)
     }
     else
     {
-        ESP_LOGW("Logger", "Could not allocate memory for itterating logger service sinks");
+        // ESP_LOGW("Logger", "Could not allocate memory for itterating logger service sinks");
     }
-}
-
-static int newlog(const char * format, va_list list)
-{
-    char* str = (char*) calloc(512, sizeof(char));
-
-    if(str == NULL)
-    {
-        return 0 ;
-    }
-
-    // Format string
-    int len = vsnprintf(str, 512, format, list);
-
-    logger_service_log_to_sinks(str, len);
-
+    
     free(str);
 
     return len;
-}
-
-void logger_service_init(void)
-{
-    ESP_LOGI("logger", "Initializing Logger");
-    slist_new(&sinks);
-
-    esp_log_set_vprintf(newlog);
-}
-
-void logger_service_log(logger_service_loglevel_t level, const char* tag, const char* format, ...)
-{
-    char* str = (char*) calloc(512, sizeof(char));
-
-    if(str == NULL)
-    {
-        ESP_LOGW("Logger", "Could not allocate memory for writing to logger service sinks");
-        return;
-    }
-
-    // Format string
-    va_list list;
-    va_start(list, format);
-    int len = vsnprintf(str, 512, format, list);
-    va_end(list);
-
-    logger_service_log_to_sinks(str, len);
-    
-    free(str);
-}
-
-int64_t logger_service_log_timestamp()
-{
-    return esp_timer_get_time();
 }
 
 sink_handle_t logger_service_register_sink(logger_sink_t callback, void* user_data)
@@ -100,7 +95,7 @@ sink_handle_t logger_service_register_sink(logger_sink_t callback, void* user_da
 
     if(newSink == NULL)
     {
-        ESP_LOGW("Logger", "Could not allocate memory for adding sink");
+        // ESP_LOGW("Logger", "Could not allocate memory for adding sink");
         return NULL;
     }
 
