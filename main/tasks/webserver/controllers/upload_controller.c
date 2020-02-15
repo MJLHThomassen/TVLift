@@ -11,27 +11,27 @@ static char TAG[] = __FILE__;
 static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multipart_part* part, multipart_request_message_type_t type, void* userData)
 {
     ota_service_err_t otaErr = OTA_SERVICE_OK;
-    ota_state_t* otaState = NULL;
+    ota_state_handle_t* otaState = NULL;
 
     switch (type)
     {
     case MULTIPART_REQUEST_MESSAGE_TYPE_BEGIN:
     {
-        otaState = (ota_state_t*)userData;
+        otaState = (ota_state_handle_t*)userData;
         ota_service_initialize(otaState);
         break;
     }
 
     case MULTIPART_REQUEST_MESSAGE_TYPE_PART_BEGIN:
     {
-        otaState = (ota_state_t*)userData;
+        otaState = (ota_state_handle_t*)userData;
         if(strcmp(part->var_name, "firmware") == 0)
         {
-            otaErr = ota_service_app_update_begin(otaState);
+            otaErr = ota_service_app_update_begin(*otaState);
         }
         else if(strcmp(part->var_name, "spiffs") == 0)
         {
-            otaErr = ota_service_spiffs_update_begin(otaState);
+            otaErr = ota_service_spiffs_update_begin(*otaState);
         }
         else
         {
@@ -44,15 +44,15 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
     
     case MULTIPART_REQUEST_MESSAGE_TYPE_PART_DATA:
     {
-        otaState = (ota_state_t*)userData;
+        otaState = (ota_state_handle_t*)userData;
 
         if(strcmp(part->var_name, "app") == 0)
         {
-            otaErr = ota_service_app_update_write(otaState, part->data.p, part->data.len);
+            otaErr = ota_service_app_update_write(*otaState, part->data.p, part->data.len);
         }
         else if(strcmp(part->var_name, "spiffs") == 0)
         {
-            otaErr = ota_service_spiffs_update_begin(otaState);
+            otaErr = ota_service_spiffs_update_begin(*otaState);
         }
         else
         {
@@ -71,7 +71,7 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
 
     case MULTIPART_REQUEST_MESSAGE_TYPE_PART_END:
     {
-        otaState = (ota_state_t*)userData;
+        otaState = (ota_state_handle_t*)userData;
 
         // Check if the upload was completed succesfully
         if(part->status < 0)
@@ -84,11 +84,11 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
         {
             if(strcmp(part->var_name, "app") == 0)
             {
-                otaErr = ota_service_app_update_end(otaState);
+                otaErr = ota_service_app_update_end(*otaState);
             }
             else if(strcmp(part->var_name, "spiffs") == 0)
             {
-                otaErr = ota_service_spiffs_update_end(otaState);
+                otaErr = ota_service_spiffs_update_end(*otaState);
             }
             else
             {
@@ -132,7 +132,7 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
     }
 }
 
-static ota_state_t ota_state;
+static ota_state_handle_t ota_state;
 static multipart_request_uri_handler_info_t firmware_post_handler_info = {
     .uri = controllerUri "firmware",
     .method = HTTP_POST,

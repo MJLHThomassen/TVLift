@@ -14,7 +14,17 @@
 static const char TAG[] = "lift";
 static const ledc_timer_bit_t DUTY_RESOLUTION = LEDC_TIMER_8_BIT;
 
-static lift_err_t lift_start_pul(const lift_device_t* const handle, uint32_t speed)
+struct lift_device_s
+{
+    gpio_num_t gpioEna;
+    gpio_num_t gpioDir;
+    gpio_num_t gpioPul;
+    gpio_num_t gpioEndstopDown;
+    gpio_num_t gpioEndstopUp;
+    uint32_t speed;
+};
+
+static lift_err_t lift_start_pul(const lift_device_handle_t handle, uint32_t speed)
 {
     esp_err_t err;
 
@@ -56,7 +66,7 @@ static lift_err_t lift_start_pul(const lift_device_t* const handle, uint32_t spe
     return LIFT_OK;
 }
 
-static lift_err_t lift_stop_pul(const lift_device_t* const handle)
+static lift_err_t lift_stop_pul(const lift_device_handle_t handle)
 {
     esp_err_t err = ledc_stop(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 0);
 
@@ -65,7 +75,7 @@ static lift_err_t lift_stop_pul(const lift_device_t* const handle)
 
 static void IRAM_ATTR endstop_down_isr_handler(void* arg)
 {
-    lift_device_t* handle = (lift_device_t*) arg;
+    lift_device_handle_t handle = (lift_device_handle_t) arg;
 
     // If we are moving down, stop
     if(gpio_get_level(handle->gpioDir) == DIR_DOWN)
@@ -76,7 +86,7 @@ static void IRAM_ATTR endstop_down_isr_handler(void* arg)
 
 static void IRAM_ATTR endstop_up_isr_handler(void* arg)
 {
-    lift_device_t* handle = (lift_device_t*) arg;
+    lift_device_handle_t handle = (lift_device_handle_t) arg;
 
     // If we are moving up, stop
     if(gpio_get_level(handle->gpioDir) == DIR_UP)
@@ -86,16 +96,24 @@ static void IRAM_ATTR endstop_up_isr_handler(void* arg)
 }
 
 lift_err_t lift_add_device(
-    gpio_num_t gpioEna,
-    gpio_num_t gpioDir,
-    gpio_num_t gpioPul,
-    gpio_num_t gpioEndstopDown,
-    gpio_num_t gpioEndstopUp,
-    lift_device_t* const handle)
+    int gpioEna,
+    int gpioDir,
+    int gpioPul,
+    int gpioEndstopDown,
+    int gpioEndstopUp,
+    lift_device_handle_t* handle)
 {
     esp_err_t err;
 
     LOG_I(TAG, "Adding lift device %x", (unsigned int)handle);
+
+    lift_device_handle_t newHandle = (lift_device_handle_t)malloc(sizeof(*newHandle));
+
+    if(handle == NULL)
+    {
+        LOG_E(TAG, "Can not allocate memory for lift device");
+        return LIFT_FAIL;
+    }
 
     // Configure output pins with pullup
     // Set mode = GPIO_MODE_INPUT_OUTPUT so we can read back active value
@@ -145,14 +163,12 @@ lift_err_t lift_add_device(
     // }
 
     // Initialize all values in handle
-    handle->gpioEna = gpioEna;
-    handle->gpioDir = gpioDir;
-    handle->gpioPul = gpioPul;
-    handle->gpioEndstopDown = gpioEndstopDown;
-    handle->gpioEndstopUp = gpioEndstopUp;
-    handle->speed = 320;
-
-    return LIFT_OK;
+    newHandle->gpioEna = gpioEna;
+    newHandle->gpioDir = gpioDir;
+    newHandle->gpioPul = gpioPul;
+    newHandle->gpioEndstopDown = gpioEndstopDown;
+    newHandle->gpioEndstopUp = gpioEndstopUp;
+    newHandle->speed = 320;
 
     // Install gpio isr service
     err = gpio_install_isr_service(0);
@@ -162,29 +178,34 @@ lift_err_t lift_add_device(
     }
 
     // Hook isr handlers
-    err = gpio_isr_handler_add(gpioEndstopDown, endstop_down_isr_handler, (void*) handle);
+    err = gpio_isr_handler_add(gpioEndstopDown, endstop_down_isr_handler, (void*) newHandle);
     if(err != ESP_OK)
     {
         return LIFT_FAIL;
     }
 
-    err = gpio_isr_handler_add(gpioEndstopUp, endstop_up_isr_handler, (void*) handle);
+    err = gpio_isr_handler_add(gpioEndstopUp, endstop_up_isr_handler, (void*) newHandle);
     if(err != ESP_OK)
     {
         return LIFT_FAIL;
     }
+
+    // Assign the new handle
+    *handle = newHandle;
 
     return LIFT_OK;
 }
 
-lift_err_t lift_remove_device(const lift_device_t* const handle)
+lift_err_t lift_remove_device(lift_device_handle_t handle)
 {
     LOG_I(TAG, "Removing lift device %x", (unsigned int)handle);
 
+    free(handle);
+
     return LIFT_OK;
 }
 
-lift_err_t lift_up(const lift_device_t* const handle)
+lift_err_t lift_up(const lift_device_handle_t handle)
 {
     LOG_I(TAG, "Lift going up.");
 
@@ -204,7 +225,7 @@ lift_err_t lift_up(const lift_device_t* const handle)
     return lift_start_pul(handle, handle->speed);
 }
 
-lift_err_t lift_down(const lift_device_t* const handle)
+lift_err_t lift_down(const lift_device_handle_t handle)
 {
     LOG_I(TAG, "Lift going down.");
 
@@ -224,7 +245,7 @@ lift_err_t lift_down(const lift_device_t* const handle)
     return lift_start_pul(handle, handle->speed);
 }
 
-lift_err_t lift_stop(const lift_device_t* const handle)
+lift_err_t lift_stop(const lift_device_handle_t handle)
 {
     LOG_I(TAG, "Lift stopping.");
 
@@ -232,7 +253,7 @@ lift_err_t lift_stop(const lift_device_t* const handle)
     return lift_stop_pul(handle);
 }
 
-lift_err_t lift_disable(const lift_device_t* const handle)
+lift_err_t lift_disable(const lift_device_handle_t handle)
 {
     LOG_I(TAG, "Lift being disabled.");
 
@@ -242,7 +263,12 @@ lift_err_t lift_disable(const lift_device_t* const handle)
     return LIFT_OK;
 }
 
-lift_err_t lift_set_speed(lift_device_t* const handle, uint32_t speed)
+uint32_t lift_get_speed(lift_device_handle_t handle)
+{
+    return handle->speed;
+}
+
+lift_err_t lift_set_speed(lift_device_handle_t handle, uint32_t speed)
 {
     handle->speed = speed;
 

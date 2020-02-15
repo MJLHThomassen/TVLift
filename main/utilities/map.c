@@ -21,7 +21,7 @@ struct map_iter_s
 
 void map_new(map* m)
 {
-    map newMap = (map)calloc(1, sizeof(map));
+    map newMap = (map)calloc(1, sizeof(*newMap));
     
     slist_new(&newMap->entries);
 
@@ -30,7 +30,7 @@ void map_new(map* m)
 
 void map_copy(map m, map* copy)
 {
-    map newMap = (map)calloc(1, sizeof(map));
+    map newMap = (map)calloc(1, sizeof(*newMap));
 
     slist_copy_shallow(m->entries, &newMap->entries);
 

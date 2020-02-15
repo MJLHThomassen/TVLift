@@ -12,7 +12,7 @@
 
 static char TAG[] = __FILE__;
 
-static lift_device_t liftHandle;
+static lift_device_handle_t liftHandle;
 
 static uint32_t getSpeed(struct http_message* message)
 {
@@ -32,14 +32,14 @@ static void up_post_handler(struct mg_connection* nc, struct http_message* messa
     lift_err_t liftErr;
 
     uint32_t speed = getSpeed(message);
-    liftErr = lift_set_speed(&liftHandle, speed);
+    liftErr = lift_set_speed(liftHandle, speed);
     if(liftErr != LIFT_OK)
     {
         mg_http_send_error(nc, 500, "Can not set requested speed.");
         return;
     }
 
-    liftErr = lift_up(&liftHandle);
+    liftErr = lift_up(liftHandle);
     if(liftErr != LIFT_OK)
     {
         mg_http_send_error(nc, 500, "Can not move lift.");
@@ -54,14 +54,14 @@ static void down_post_handler(struct mg_connection* nc, struct http_message* mes
     lift_err_t liftErr;
 
     uint32_t speed = getSpeed(message);
-    liftErr = lift_set_speed(&liftHandle, speed);
+    liftErr = lift_set_speed(liftHandle, speed);
     if(liftErr != LIFT_OK)
     {
         mg_http_send_error(nc, 500, "Can not set requested speed.");
         return;
     }
 
-    liftErr = lift_down(&liftHandle);
+    liftErr = lift_down(liftHandle);
     if(liftErr != LIFT_OK)
     {
         mg_http_send_error(nc, 500, "Can not move lift.");
@@ -73,7 +73,7 @@ static void down_post_handler(struct mg_connection* nc, struct http_message* mes
 
 static void stop_post_handler(struct mg_connection* nc, struct http_message* message)
 {
-    lift_err_t liftErr = lift_stop(&liftHandle);
+    lift_err_t liftErr = lift_stop(liftHandle);
     if(liftErr != LIFT_OK)
     {
         mg_http_send_error(nc, 500, "Can not stop lift.");
@@ -85,7 +85,7 @@ static void stop_post_handler(struct mg_connection* nc, struct http_message* mes
 
 static void speed_get_handler(struct mg_connection* nc, struct http_message* message)
 {
-    char* str = json_asprintf("{speed:%u}", liftHandle.speed);
+    char* str = json_asprintf("{speed:%u}", lift_set_speed);
     mg_send_head(nc, 200, strlen(str), NULL);
     mg_printf(nc, "%s", str);
     free(str);
