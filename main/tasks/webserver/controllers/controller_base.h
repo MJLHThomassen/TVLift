@@ -20,8 +20,10 @@ typedef enum
 typedef void (*uri_handler_t)(
     struct mg_connection* nc,
     struct http_message* const message);
+
 typedef void (*multipart_request_uri_handler_t)(
     struct mg_connection* const nc,
+    struct http_message* const message,
     struct mg_http_multipart_part* const part,
     const multipart_request_message_type_t type,
     void* userData);

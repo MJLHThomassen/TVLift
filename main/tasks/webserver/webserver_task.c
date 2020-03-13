@@ -17,7 +17,7 @@
 #include "controllers/lift_controller.h"
 #include "controllers/upload_controller.h"
 
-#define WEBROOT "/spiffs/www/"
+#define WEBROOT "/data/www/"
 #define WEBSERVER_THREAD_TAG "WebserverThread"
 #define WEBSERVER_THREAD_STACK_SIZE_KB 8
 

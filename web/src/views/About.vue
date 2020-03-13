@@ -23,7 +23,7 @@ export default class About extends Vue
 {
   private version: string = `${process.env.VUE_APP_VERSION} (${process.env.NODE_ENV})`;
 
-  public constructor() 
+  public constructor()
   {
     super();
   }

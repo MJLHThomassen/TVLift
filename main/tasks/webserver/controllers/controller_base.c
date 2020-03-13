@@ -4,6 +4,8 @@
 
 #include <services/logger_service.h>
 
+static char TAG[] = "Controller Base";
+
 static void http_request_handler(struct mg_connection* nc, int ev, void* ev_data, void* user_data)
 {
     uri_handler_info_t* handlerInfo = (uri_handler_info_t*) user_data;
@@ -48,7 +50,7 @@ static void http_multipart_request_handler(struct mg_connection* nc, int ev, voi
             nc->user_data = handlerInfo;
 
             // Call the handler
-            handlerInfo->handler(nc, NULL, MULTIPART_REQUEST_MESSAGE_TYPE_BEGIN, handlerInfo->user_data);
+            handlerInfo->handler(nc, message, NULL, MULTIPART_REQUEST_MESSAGE_TYPE_BEGIN, handlerInfo->user_data);
         }
         else
         {
@@ -84,7 +86,7 @@ static void http_multipart_request_handler(struct mg_connection* nc, int ev, voi
         }
           
         // Call the handler
-        handlerInfo->handler(nc, part, type, handlerInfo->user_data);
+        handlerInfo->handler(nc, NULL, part, type, handlerInfo->user_data);
         break;
     }
     }

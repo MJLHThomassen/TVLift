@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <sdkconfig.h>
 #include <utilities/slist.h>
 
 char logger_service_timestamp[20] = "";
@@ -35,6 +36,12 @@ int logger_service_log(logger_service_loglevel_t level, const char* format, ...)
 
 int logger_service_vlog(logger_service_loglevel_t level, const char* format, va_list vlist)
 {
+    if(level > CONFIG_LOG_DEFAULT_LEVEL)
+    {
+        // Don't log current level
+        return;
+    }
+
     char* str = (char*) calloc(512, sizeof(char));
 
     if(str == NULL)

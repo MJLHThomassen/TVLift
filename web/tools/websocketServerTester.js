@@ -1,8 +1,8 @@
-import * as http from "http";
-import * as WebSocket from "ws";
-import express from "express";
-import uuidv1 from "uuid/v1";
-import * as Ansicolor from "ansicolor";
+const http = require("http");
+const WebSocket = require("ws");
+const express = require("express");
+const uuidv1 = require("uuid/v1");
+const Ansicolor = require("ansicolor");
 
 function sleep(ms)
 {
@@ -61,6 +61,11 @@ app.post("/api/lift/down", (req, res) =>
 });
 
 app.post("/api/lift/stop", (req, res) => 
+{
+  res.status(200).send();
+});
+
+app.post("/api/upload/firmware", (req, res) => 
 {
   res.status(200).send();
 });

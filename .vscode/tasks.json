@@ -16,6 +16,7 @@
             "type": "shell",
             "command": "idf.py",
             "args": [
+                "-v",
                 "build"
             ],
             "presentation": {

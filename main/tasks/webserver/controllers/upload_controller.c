@@ -1,14 +1,19 @@
 #include "upload_controller.h"
 #include "controller_base.h"
 
-#include <ota/ota_service.h>
+#include <services/ota_service.h>
 #include <services/logger_service.h>
 
 #define controllerUri "/upload/"
 
-static char TAG[] = __FILE__;
+static char TAG[] = "Upload Controller";
 
-static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multipart_part* part, multipart_request_message_type_t type, void* userData)
+static void firmware_post_handler(
+    struct mg_connection* nc,
+    struct http_message* const message,
+    struct mg_http_multipart_part* part,
+    multipart_request_message_type_t type,
+    void* userData)
 {
     ota_service_err_t otaErr = OTA_SERVICE_OK;
     ota_state_handle_t* otaState = NULL;
@@ -17,8 +22,7 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
     {
     case MULTIPART_REQUEST_MESSAGE_TYPE_BEGIN:
     {
-        otaState = (ota_state_handle_t*)userData;
-        ota_service_initialize(otaState);
+        // Nothing to do
         break;
     }
 
@@ -27,11 +31,7 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
         otaState = (ota_state_handle_t*)userData;
         if(strcmp(part->var_name, "firmware") == 0)
         {
-            otaErr = ota_service_app_update_begin(*otaState);
-        }
-        else if(strcmp(part->var_name, "spiffs") == 0)
-        {
-            otaErr = ota_service_spiffs_update_begin(*otaState);
+            otaErr = ota_service_firmware_update_begin(otaState);
         }
         else
         {
@@ -46,13 +46,9 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
     {
         otaState = (ota_state_handle_t*)userData;
 
-        if(strcmp(part->var_name, "app") == 0)
+        if(strcmp(part->var_name, "firmware") == 0)
         {
-            otaErr = ota_service_app_update_write(*otaState, part->data.p, part->data.len);
-        }
-        else if(strcmp(part->var_name, "spiffs") == 0)
-        {
-            otaErr = ota_service_spiffs_update_begin(*otaState);
+            otaErr = ota_service_firmware_update_write(*otaState, part->data.p, part->data.len);
         }
         else
         {
@@ -82,13 +78,9 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
         }
         else
         {
-            if(strcmp(part->var_name, "app") == 0)
+            if(strcmp(part->var_name, "firmware") == 0)
             {
-                otaErr = ota_service_app_update_end(*otaState);
-            }
-            else if(strcmp(part->var_name, "spiffs") == 0)
-            {
-                otaErr = ota_service_spiffs_update_end(*otaState);
+                otaErr = ota_service_firmware_update_end(*otaState);
             }
             else
             {
@@ -107,8 +99,8 @@ static void firmware_post_handler(struct mg_connection* nc, struct mg_http_multi
         nc->flags |= MG_F_SEND_AND_CLOSE;
 
         // Restart the system
-        LOG_I(TAG, "Prepare to restart system!");
-        esp_restart();
+        //LOG_I(TAG, "Prepare to restart system!");
+        //esp_restart();
         return;
     }
 

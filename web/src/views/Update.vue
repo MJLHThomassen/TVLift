@@ -76,7 +76,7 @@ export default class LiftControls extends Vue
     try
     {
       const response = await axios.post(
-        "upload/firmware",
+        "/api/upload/firmware",
         data,
         {
           onUploadProgress: (progressEvent: ProgressEvent) =>

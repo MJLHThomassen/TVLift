@@ -115,7 +115,11 @@
         "thread": "c",
         "cstdbool": "c",
         "typeinfo": "c",
-        "*.inc": "c"
+        "*.inc": "c",
+        "sdkconfig.h": "c",
+        "spiffs_service.h": "c",
+        "webserver_task.h": "c",
+        "esp_err.h": "c"
     },
     "git.ignoreLimitWarning": true
 }

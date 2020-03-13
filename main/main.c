@@ -11,9 +11,11 @@
 #include <esp_system.h>
 #include <esp_event.h>
 #include <nvs_flash.h>
+#include <esp_ota_ops.h>
 #include <esp_vfs_dev.h>
 #include <esp_vfs_fat.h>
-#include <esp_spiffs.h>
+
+#include <driver/i2c.h>
 #include <driver/sdmmc_host.h>
 #include <driver/sdspi_host.h>
 #include <sdmmc_cmd.h>
@@ -22,15 +24,24 @@
 #include <esp_wifi.h>
 #include <esp_sntp.h>
 
-#include "sdkconfig.h"
-#include "services/logger_service.h"
-#include "tasks/blink/blink_task.h"
-#include "tasks/webserver/webserver_task.h"
+#include <ds1307.h>
+#include <sdkconfig.h>
+#include <services/spiffs_service.h>
+#include <services/logger_service.h>
+#include <tasks/blink/blink_task.h>
+#include <tasks/webserver/webserver_task.h>
 
-#define PIN_NUM_MISO 19
-#define PIN_NUM_MOSI 23
-#define PIN_NUM_CLK  18
-#define PIN_NUM_CS   5
+// SPI
+#define PIN_NUM_MISO    GPIO_NUM_19
+#define PIN_NUM_MOSI    GPIO_NUM_23
+#define PIN_NUM_CLK     GPIO_NUM_18
+#define PIN_NUM_CS      GPIO_NUM_5
+
+// I2C
+#define I2C_PORT        I2C_NUM_0
+#define PIN_NUM_SCL     GPIO_NUM_22
+#define PIN_NUM_SDA     GPIO_NUM_21
+
 
 const char hostname[] = "tvlift";
 
@@ -111,9 +122,44 @@ static void serial_logger_sink(const char* message, const size_t len, void* user
     printf(message);
 }
 
-void time_sync_notification_cb(struct timeval *tv)
+void time_sync_notification_cb(struct timeval* tv)
 {
-    LOG_I(TAG, "SNTP Synchronisation notification recieved");
+    ds1307_device_handle_t handle;
+    ds1307_err_t err = ds1307_add_device(I2C_PORT, 0x68, &handle);
+
+    time_t sntpNow = tv->tv_sec;
+    time_t rtcNow;
+    do
+    {
+        time_t now;
+        err = ds1307_get_time(handle, &now);
+    } while (err != DS1307_OK);
+
+    LOG_I(TAG, "SNTP Synchronisation notification recieved. RTC Time: %s SNTP Time: %s", asctime(gmtime(&rtcNow)), asctime(gmtime(&sntpNow)));
+
+    // Resync RTC
+    do
+    {
+        err = ds1307_set_time(handle, sntpNow);
+    } while (err != DS1307_OK);
+
+    err = ds1307_remove_device(handle);
+}
+
+static void initialize_i2c(void)
+{
+    i2c_config_t cfg = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = PIN_NUM_SDA,
+        .sda_pullup_en = GPIO_PULLUP_DISABLE,
+        .scl_io_num =  PIN_NUM_SCL,
+        .scl_pullup_en = GPIO_PULLUP_DISABLE,
+
+        .master.clk_speed = 100000
+    };
+
+    i2c_param_config(I2C_PORT, &cfg);
+    i2c_driver_install(I2C_PORT, I2C_MODE_MASTER, 0, 0, 0);
 }
 
 static void initialize_sntp(void)
@@ -122,48 +168,6 @@ static void initialize_sntp(void)
     sntp_setservername(0, "pool.ntp.org");
     sntp_set_time_sync_notification_cb(time_sync_notification_cb);
     sntp_init();
-}
-
-static void initialise_spiffs(void)
-{    
-    esp_vfs_spiffs_conf_t conf = {
-      .base_path = "/spiffs",
-      .partition_label = NULL,
-      .max_files = 5,
-      .format_if_mount_failed = true
-    };
-    
-    // Use settings defined above to initialize and mount SPIFFS filesystem.
-    // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
-    esp_err_t err = esp_vfs_spiffs_register(&conf);
-
-    if (err != ESP_OK) 
-    {
-        if (err == ESP_FAIL) 
-        {
-            LOG_E(TAG, "Failed to mount or format filesystem");
-        }
-        else if (err == ESP_ERR_NOT_FOUND) 
-        {
-            LOG_E(TAG, "Failed to find SPIFFS partition");
-        }
-        else 
-        {
-            LOG_E(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(err));
-        }
-        return;
-    }
-
-    size_t total = 0, used = 0;
-    err = esp_spiffs_info(NULL, &total, &used);
-    if (err != ESP_OK) 
-    {
-        LOG_E(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(err));
-    }
-    else 
-    {
-        LOG_I(TAG, "Partition size: total: %d, used: %d", total, used);
-    }
 }
 
 static void initialise_sdcard(void)
@@ -267,7 +271,7 @@ static void initialise_wifi(void)
     LOG_I(TAG, "Setting WiFi configuration SSID: %s", wifi_config.sta.ssid);
 }
 
-void app_main(void)
+void initialize_app(void)
 {
     logger_service_init();
     logger_service_register_sink(serial_logger_sink, NULL);
@@ -290,7 +294,42 @@ void app_main(void)
     // Create the event loop
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    initialise_spiffs();
+    // Do partition checks
+    const esp_partition_t* currentPartition = esp_ota_get_running_partition();
+
+    // TODO: Do this a bit better
+    assert(currentPartition != NULL);
+    LOG_I(TAG, "Current partition: %s", currentPartition->label);
+
+    esp_ota_img_states_t state;
+    err = esp_ota_get_state_partition(currentPartition, &state);
+    ESP_ERROR_CHECK(err);
+
+    if(state == ESP_OTA_IMG_PENDING_VERIFY)
+    {
+        // Do image validity checks
+        LOG_I(TAG, "Current partition is pending verification");
+    }
+
+    const char* spiffsPartitionLabel = spiffs_service_get_spiffs_partition_label_for_app_partition(currentPartition->label);
+    spiffs_service_mount(spiffsPartitionLabel, "/data");
+    initialize_i2c();
+
+    // Set time from RTC
+    time_t now;
+
+    ds1307_device_handle_t handle;
+    ds1307_add_device(I2C_PORT, 0x68, &handle);
+    ds1307_get_time(handle, &now);
+    ds1307_remove_device(handle);
+   
+    struct timeval rtcTimeval = {
+	    .tv_sec = now,
+	    .tv_usec = 0
+    };
+
+    settimeofday(&rtcTimeval, NULL);
+
     initialise_sdcard();
     initialise_mdns();
     initialise_wifi();
@@ -315,6 +354,15 @@ void app_main(void)
         tskIDLE_PRIORITY+12,
         &webserverTaskHandle,
         PRO_CPU_NUM);
+
+    // If we get this far, assume app is functioning
+    // TODO: Check workings of tasks
+    esp_ota_mark_app_valid_cancel_rollback();
+}
+
+void app_main(void)
+{
+    initialize_app();
 
     for(;;)
     {
