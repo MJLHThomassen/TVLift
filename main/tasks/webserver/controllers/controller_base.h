@@ -3,12 +3,24 @@
 
 #include <mongoose.h>
 
-#define HTTP_GET    "GET"
-#define HTTP_POST   "POST"
-#define HTTP_PUT    "PUT"
-#define HTTP_DELETE "DELETE"
+typedef enum http_request_method_e
+{
+    HTTP_REQUEST_METHOD_UNKNOWN = -1,
+    
+    HTTP_REQUEST_METHOD_GET = 0,
+    HTTP_REQUEST_METHOD_HEAD,
+    HTTP_REQUEST_METHOD_POST,
+    HTTP_REQUEST_METHOD_PUT,
+    HTTP_REQUEST_METHOD_DELETE,
+    HTTP_REQUEST_METHOD_CONNECT,
+    HTTP_REQUEST_METHOD_OPTIONS,
+    HTTP_REQUEST_METHOD_TRACE,
+    HTTP_REQUEST_METHOD_PATCH,
 
-typedef enum
+    HTTP_REQUEST_METHOD_MAX
+} http_request_method_t;
+
+typedef enum multipart_request_message_type_e
 {
     MULTIPART_REQUEST_MESSAGE_TYPE_BEGIN,
     MULTIPART_REQUEST_MESSAGE_TYPE_PART_BEGIN,
@@ -17,30 +29,36 @@ typedef enum
     MULTIPART_REQUEST_MESSAGE_TYPE_END
 } multipart_request_message_type_t;
 
-typedef void (*uri_handler_t)(
+typedef void (*request_handler_t)(
     struct mg_connection* nc,
-    struct http_message* const message);
+    struct http_message* const message,
+    void* userData);
 
-typedef void (*multipart_request_uri_handler_t)(
+typedef void (*multipart_request_handler_t)(
     struct mg_connection* const nc,
     struct http_message* const message,
     struct mg_http_multipart_part* const part,
     const multipart_request_message_type_t type,
     void* userData);
 
-typedef struct uri_handler_info_t
+typedef struct method_handler_info_s
 {
-    const char* uri;
-    uri_handler_t handler;
-    const char* method;
+    http_request_method_t method;
+    request_handler_t handler;
 
     void* user_data;
+} method_handler_info_t;
+
+typedef struct uri_handler_info_s
+{
+    const char* uri;
+    method_handler_info_t methodHandlers[HTTP_REQUEST_METHOD_MAX];
 } uri_handler_info_t;
 
 typedef struct multipart_request_uri_handler_info_t
 {
     const char* uri;
-    multipart_request_uri_handler_t handler;
+    multipart_request_handler_t handler;
     const char* method;
 
     void* user_data;

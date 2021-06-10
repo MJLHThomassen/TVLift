@@ -99,8 +99,8 @@ static void firmware_post_handler(
         nc->flags |= MG_F_SEND_AND_CLOSE;
 
         // Restart the system
-        //LOG_I(TAG, "Prepare to restart system!");
-        //esp_restart();
+        LOG_I(TAG, "Prepare to restart system!");
+        esp_restart();
         return;
     }
 
@@ -127,7 +127,7 @@ static void firmware_post_handler(
 static ota_state_handle_t ota_state;
 static multipart_request_uri_handler_info_t firmware_post_handler_info = {
     .uri = controllerUri "firmware",
-    .method = HTTP_POST,
+    .method = "POST",
     .handler = firmware_post_handler,
     .user_data = &ota_state
     };

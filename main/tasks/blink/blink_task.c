@@ -14,6 +14,7 @@ static float blinkOnPercentage = 0;
 
 static void on_service_status_changed(const service_info_t* info)
 {
+    LOG_I(TAG, "Service %s changed state to %i", info->name, info->state);
     if(info->state == STATUS_SERVICE_STATE_ACTIVE)
     {
         blinkOnPercentage = 1;

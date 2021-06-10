@@ -1,5 +1,6 @@
 
 #include "shared.h"
+#include "pins.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -20,6 +21,7 @@
 #include <driver/sdspi_host.h>
 #include <sdmmc_cmd.h>
 
+#include <esp_netif.h>
 #include <mdns.h>
 #include <esp_wifi.h>
 #include <esp_sntp.h>
@@ -31,22 +33,11 @@
 #include <tasks/blink/blink_task.h>
 #include <tasks/webserver/webserver_task.h>
 
-// SPI
-#define PIN_NUM_MISO    GPIO_NUM_19
-#define PIN_NUM_MOSI    GPIO_NUM_23
-#define PIN_NUM_CLK     GPIO_NUM_18
-#define PIN_NUM_CS      GPIO_NUM_5
-
-// I2C
-#define I2C_PORT        I2C_NUM_0
-#define PIN_NUM_SCL     GPIO_NUM_22
-#define PIN_NUM_SDA     GPIO_NUM_21
-
-
 const char hostname[] = "tvlift";
 
 static const char* TAG = "APP";
 static bool shuttingDown = false;
+static esp_netif_t* espNetifInstance;
 
 static void shutdown_handler(void)
 {
@@ -84,7 +75,7 @@ static void system_event_handler(void* arg, esp_event_base_t event_base, int32_t
         LOG_I(TAG, "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
 
         // Set hostname
-        ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, hostname));
+        ESP_ERROR_CHECK(esp_netif_set_hostname(espNetifInstance, hostname));
     }
 }
 
@@ -124,26 +115,26 @@ static void serial_logger_sink(const char* message, const size_t len, void* user
 
 void time_sync_notification_cb(struct timeval* tv)
 {
-    ds1307_device_handle_t handle;
-    ds1307_err_t err = ds1307_add_device(I2C_PORT, 0x68, &handle);
-
     time_t sntpNow = tv->tv_sec;
-    time_t rtcNow;
-    do
-    {
-        time_t now;
-        err = ds1307_get_time(handle, &now);
-    } while (err != DS1307_OK);
-
-    LOG_I(TAG, "SNTP Synchronisation notification recieved. RTC Time: %s SNTP Time: %s", asctime(gmtime(&rtcNow)), asctime(gmtime(&sntpNow)));
+    LOG_I(TAG, "SNTP Synchronisation notification recieved. SNTP Time: %s", asctime(gmtime(&sntpNow)));
 
     // Resync RTC
-    do
+    ds1307_device_handle_t handle;
+    ds1307_err_t err = ds1307_add_device(I2C_PORT, 0x68, &handle);
+    if(err != DS1307_OK)
     {
-        err = ds1307_set_time(handle, sntpNow);
-    } while (err != DS1307_OK);
+        LOG_W(TAG, "Can not connect to RTC device for synchronization");
+        return;
+    }
 
-    err = ds1307_remove_device(handle);
+    err = ds1307_set_time(handle, sntpNow);
+    if(err != DS1307_OK)
+    {
+        LOG_W(TAG, "Can not connect to RTC device for synchronization");
+        return;
+    }
+
+    ds1307_remove_device(handle);
 }
 
 static void initialize_i2c(void)
@@ -160,14 +151,6 @@ static void initialize_i2c(void)
 
     i2c_param_config(I2C_PORT, &cfg);
     i2c_driver_install(I2C_PORT, I2C_MODE_MASTER, 0, 0, 0);
-}
-
-static void initialize_sntp(void)
-{
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
-    sntp_set_time_sync_notification_cb(time_sync_notification_cb);
-    sntp_init();
 }
 
 static void initialise_sdcard(void)
@@ -244,11 +227,10 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &system_event_handler, NULL));
 
     // Initialise ip adapter
-    // esp_netif_init();
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
 
     // Initialise wifi
-    // esp_netif_create_default_wifi_sta();
+    espNetifInstance = esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -271,6 +253,14 @@ static void initialise_wifi(void)
     LOG_I(TAG, "Setting WiFi configuration SSID: %s", wifi_config.sta.ssid);
 }
 
+static void initialize_sntp(void)
+{
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_set_time_sync_notification_cb(time_sync_notification_cb);
+    sntp_init();
+}
+
 void initialize_app(void)
 {
     logger_service_init();
@@ -281,7 +271,7 @@ void initialize_app(void)
 
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES) 
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) 
     {
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
@@ -313,22 +303,36 @@ void initialize_app(void)
 
     const char* spiffsPartitionLabel = spiffs_service_get_spiffs_partition_label_for_app_partition(currentPartition->label);
     spiffs_service_mount(spiffsPartitionLabel, "/data");
-    initialize_i2c();
+   
+    // I2C conflicts with Lift Pul and Lift Dir on current board
+    // initialize_i2c();
 
     // Set time from RTC
-    time_t now;
-
     ds1307_device_handle_t handle;
-    ds1307_add_device(I2C_PORT, 0x68, &handle);
-    ds1307_get_time(handle, &now);
-    ds1307_remove_device(handle);
-   
-    struct timeval rtcTimeval = {
-	    .tv_sec = now,
-	    .tv_usec = 0
-    };
+    ds1307_err_t rtcErr = ds1307_add_device(I2C_PORT, 0x68, &handle);
+    if(rtcErr == DS1307_OK)
+    {
+        time_t now;
+        rtcErr = ds1307_get_time(handle, &now);
+        if(rtcErr == DS1307_OK)
+        {
+            ds1307_remove_device(handle);
 
-    settimeofday(&rtcTimeval, NULL);
+            struct timeval rtcTimeval = {
+                .tv_sec = now,
+                .tv_usec = 0
+            };
+
+            settimeofday(&rtcTimeval, NULL);
+
+            LOG_I(TAG, "RTC Time: %s", asctime(gmtime(&now)));
+        }
+    }
+    
+    if(rtcErr != DS1307_OK)
+    {
+        LOG_W(TAG, "Could not get current time from RTC");
+    }
 
     initialise_sdcard();
     initialise_mdns();
