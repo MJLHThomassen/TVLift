@@ -8,36 +8,34 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
-    "testserver": "node tools/websocketServerTester.js"
+    "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "ansicolor": "^1.1.92",
+    "ansicolor": "^1.1.95",
     "axios": "^0.19.0",
-    "core-js": "^3.6.4",
+    "core-js": "^3.15.2",
     "esm": "^3.2.25",
     "mini.css": "^3.0.1",
-    "vue": "^2.6.11",
-    "vue-class-component": "^7.2.2",
-    "vue-feather-icons": "^5.0.0",
-    "vue-property-decorator": "^8.3.0",
-    "vue-router": "^3.1.5",
-    "vuex": "^3.1.2"
+    "reflect-metadata": "^0.1.13",
+    "tsyringe": "^4.6.0",
+    "vue": "^2.6.14",
+    "vue-class-component": "^7.2.6",
+    "vue-feather-icons": "^5.1.0",
+    "vue-property-decorator": "^8.5.1",
+    "vue-router": "^3.5.2",
+    "vuex": "^3.6.2"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^4.1.2",
-    "@vue/cli-plugin-typescript": "^4.1.2",
-    "@vue/cli-service": "^4.1.2",
+    "@vue/cli-plugin-babel": "^4.5.13",
+    "@vue/cli-plugin-typescript": "^4.5.13",
+    "@vue/cli-service": "^4.5.13",
     "compression-webpack-plugin": "^3.1.0",
-    "concurrently": "^5.1.0",
-    "express": "^4.17.1",
-    "node-sass": "^4.13.1",
+    "concurrently": "^5.3.0",
+    "node-sass": "^4.14.1",
     "npm-run-all": "^4.1.5",
     "sass-loader": "^8.0.2",
-    "typescript": "^3.7.5",
-    "uuid": "^3.4.0",
-    "vue-template-compiler": "^2.6.11",
-    "ws": "^7.2.1"
+    "typescript": "^3.9.10",
+    "vue-template-compiler": "^2.6.14"
   },
   "postcss": {
     "plugins": {

@@ -20,7 +20,23 @@ idf_component_register(
 
     "main.c"
 
-    INCLUDE_DIRS ".")
+    INCLUDE_DIRS
+        "."
+
+    PRIV_REQUIRES
+        logger
+        rtc
+
+        frozen
+        mongoose6
+
+        app_update
+        esp_gdbstub
+        fatfs
+        mdns
+        nvs_flash
+        spiffs
+)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu11)
 

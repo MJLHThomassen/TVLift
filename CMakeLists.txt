@@ -2,6 +2,12 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
+# Only include the main component and let that pull in everything else that is needed
+set(COMPONENTS
+    "esptool_py"    # Needed for flashing
+    "main"          # Main code
+)
+
 message("ESP_PLATFORM: ${ESP_PLATFORM}")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
