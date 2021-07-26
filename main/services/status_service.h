@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include <utilities/map.h>
+#include <map.h>
 
 typedef uint32_t service_handle_t;
 typedef uint32_t status_service_registration_handle_t;

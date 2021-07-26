@@ -7,21 +7,19 @@
 #include <esp_vfs_dev.h>
 #include <esp_spiffs.h>
 
-#include <services/logger_service.h>
+#include <logger.h>
 
 static const char TAG[] = "Spiffs Service";
 
 const char* spiffs_service_get_spiffs_partition_label_for_app_partition(const char* appPartitionLabel)
 {
-    esp_err_t err;
-
     const esp_partition_t* appPartition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, appPartitionLabel);
 
     // TODO: Do this a bit better
     assert(appPartition != NULL);
 
     // Find spiffs partition belonging to current app partition
-    esp_partition_t* spiffsPartition = NULL;
+    const esp_partition_t* spiffsPartition = NULL;
     esp_partition_iterator_t iter = esp_partition_find(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, NULL);
 
     do
@@ -42,10 +40,10 @@ const char* spiffs_service_get_spiffs_partition_label_for_app_partition(const ch
 void spiffs_service_mount(const char* partitionLabel, const char* basePath)
 {    
     esp_vfs_spiffs_conf_t conf = {
-      .base_path = basePath,
-      .partition_label = partitionLabel,
-      .max_files = 5,
-      .format_if_mount_failed = true
+        .base_path = basePath,
+        .partition_label = partitionLabel,
+        .max_files = 5,
+        .format_if_mount_failed = true
     };
 
     LOG_I(TAG, "Mounting SPIFFS partition %s at %s", partitionLabel, basePath);

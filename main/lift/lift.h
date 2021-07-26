@@ -3,11 +3,6 @@
 
 #include <driver/gpio.h>
 
-#define LIFT_MIN_SPEED 5
-#define LIFT_DEFAULT_SPEED 40
-#define LIFT_MAX_SPEED 8000
-#define LIFT_SETTLE_SPEED (LIFT_DEFAULT_SPEED / 2)
-
 typedef enum 
 {
     LIFT_OK = 0,
@@ -21,11 +16,14 @@ typedef enum
 typedef struct lift_device_s* lift_device_handle_t;
 
 lift_err_t lift_add_device(
-    int gpioEna,
-    int gpioDir,
-    int gpioPul,
-    int gpioEndstopDown,
-    int gpioEndstopUp,
+    gpio_num_t gpioEna,
+    gpio_num_t gpioDir,
+    gpio_num_t gpioPul,
+    gpio_num_t gpioEndstopDown,
+    gpio_num_t gpioEndstopUp,
+    uint32_t speed,
+    uint32_t min_speed,
+    uint32_t max_speed,
     lift_device_handle_t* handle);
 lift_err_t lift_remove_device(lift_device_handle_t handle);
 

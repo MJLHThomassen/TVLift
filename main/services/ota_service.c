@@ -9,7 +9,7 @@
 #include <esp_partition.h>
 
 #include <services/spiffs_service.h>
-#include <services/logger_service.h>
+#include <logger.h>
 
 static const char TAG[] = "Ota Service";
 
@@ -54,7 +54,7 @@ struct ota_state_s
     const esp_partition_t* app_update_partition;
 };
 
-static char * read_handle_data(ota_state_handle_t handle, size_t length)
+static const char * read_handle_data(ota_state_handle_t handle, size_t length)
 {
     const char* data = handle->data;
 

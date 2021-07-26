@@ -6,10 +6,10 @@
 #include <frozen.h>
 
 #include <pins.h>
-#include <services/logger_service.h>
+#include <logger.h>
 #include <lift/lift.h>
 
-#define controllerUri "/lift/"
+#define controllerUri "/lift"
 
 static char TAG[] = __FILE__;
 
@@ -128,7 +128,7 @@ static void speed_post_handler(struct mg_connection* nc, struct http_message* me
 }
 
 static uri_handler_info_t status_handler_info = {
-    .uri = controllerUri "status",
+    .uri = controllerUri "/status",
     .methodHandlers = {
         {
             .method = HTTP_REQUEST_METHOD_GET,
@@ -139,7 +139,7 @@ static uri_handler_info_t status_handler_info = {
     };
 
 static uri_handler_info_t up_handler_info = {
-    .uri = controllerUri "up",
+    .uri = controllerUri "/up",
     .methodHandlers = {
         {
             .method = HTTP_REQUEST_METHOD_POST,
@@ -150,7 +150,7 @@ static uri_handler_info_t up_handler_info = {
     };
 
 static uri_handler_info_t down_handler_info = {
-    .uri = controllerUri "down",
+    .uri = controllerUri "/down",
     .methodHandlers = {
         {
             .method = HTTP_REQUEST_METHOD_POST,
@@ -161,7 +161,7 @@ static uri_handler_info_t down_handler_info = {
     };
 
 static uri_handler_info_t stop_handler_info = {
-    .uri = controllerUri "stop",
+    .uri = controllerUri "/stop",
     .methodHandlers = {
         {
             .method = HTTP_REQUEST_METHOD_POST,
@@ -172,7 +172,7 @@ static uri_handler_info_t stop_handler_info = {
     };
 
 static uri_handler_info_t speed_handler_info = {
-    .uri = controllerUri "speed",
+    .uri = controllerUri "/speed",
     .methodHandlers = {
         {
             .method = HTTP_REQUEST_METHOD_GET,

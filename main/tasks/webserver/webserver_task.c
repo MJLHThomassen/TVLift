@@ -11,10 +11,11 @@
 #include <mongoose.h>
 
 #include <shared.h>
-#include <services/logger_service.h>
+#include <logger.h>
 #include <services/status_service.h>
 
 #include "controllers/lift_controller.h"
+#include "controllers/settings_controller.h"
 #include "controllers/upload_controller.h"
 
 #define WEBROOT "/data/www/"
@@ -82,7 +83,7 @@ static void webserver_ev_handler(struct mg_connection* c, int ev, void* ev_data,
             free(c->user_data);
             c->user_data = NULL;
         }
-      break;
+        break;
     }
     
 }
@@ -127,8 +128,10 @@ static void start_webserver()
     
     // Set URI handlers
     LOG_I(TAG, "Registering URI handlers");
-    lift_controller_register_uri_handlers(webserverConnection, "/api");
-    upload_controller_register_uri_handlers(webserverConnection, "/api");
+    const char* rootUri = "/api";
+    lift_controller_register_uri_handlers(webserverConnection, rootUri);
+    settings_controller_register_uri_handlers(webserverConnection, rootUri);
+    upload_controller_register_uri_handlers(webserverConnection, rootUri);
 
     // Start the webserver thread
     BaseType_t taskCreateResult = xTaskCreatePinnedToCore(

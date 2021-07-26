@@ -2,9 +2,9 @@
 #include "controller_base.h"
 
 #include <services/ota_service.h>
-#include <services/logger_service.h>
+#include <logger.h>
 
-#define controllerUri "/upload/"
+#define controllerUri "/upload"
 
 static char TAG[] = "Upload Controller";
 
@@ -105,7 +105,7 @@ static void firmware_post_handler(
     }
 
     }
-      
+
     switch (otaErr)
     {
     case OTA_SERVICE_OK:
@@ -126,7 +126,7 @@ static void firmware_post_handler(
 
 static ota_state_handle_t ota_state;
 static multipart_request_uri_handler_info_t firmware_post_handler_info = {
-    .uri = controllerUri "firmware",
+    .uri = controllerUri "/firmware",
     .method = "POST",
     .handler = firmware_post_handler,
     .user_data = &ota_state

@@ -6,7 +6,7 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 
-#include <services/logger_service.h>
+#include <logger.h>
 
 #define MOTORS_ENABLED 0
 #define MOTORS_DISABLED 1
@@ -55,6 +55,9 @@ struct lift_device_s
     lift_endstop_config_t endstopDownConfig;
     lift_endstop_config_t endstopUpConfig;
     uint32_t              speed;
+    uint32_t              min_speed;
+    uint32_t              max_speed;
+    uint32_t              settle_speed;
 
     QueueHandle_t commandEvtQueue;
     lift_state_t  state;
@@ -313,11 +316,14 @@ static void lift_monitor_task(void* arg)
 }
 
 lift_err_t lift_add_device(
-    int                   gpioEna,
-    int                   gpioDir,
-    int                   gpioPul,
-    int                   gpioEndstopDown,
-    int                   gpioEndstopUp,
+    gpio_num_t            gpioEna,
+    gpio_num_t            gpioDir,
+    gpio_num_t            gpioPul,
+    gpio_num_t            gpioEndstopDown,
+    gpio_num_t            gpioEndstopUp,
+    uint32_t              speed,
+    uint32_t              min_speed,
+    uint32_t              max_speed,
     lift_device_handle_t* handle)
 {
     esp_err_t err;
@@ -398,7 +404,10 @@ lift_err_t lift_add_device(
     newHandle->gpioPul = gpioPul;
     newHandle->endstopDownConfig.endstopEvtQueue = endstopEvtQueue;
     newHandle->endstopUpConfig.endstopEvtQueue = endstopEvtQueue;
-    newHandle->speed = LIFT_DEFAULT_SPEED;
+    newHandle->speed = speed > max_speed ? max_speed : (speed < min_speed ? min_speed : speed);
+    newHandle->min_speed = min_speed;
+    newHandle->max_speed = max_speed;
+    newHandle->settle_speed = newHandle->speed / 2;
     newHandle->commandEvtQueue = commandEvtQueue;
 
     // Check endstops before initializing state
@@ -469,7 +478,7 @@ lift_err_t lift_add_device(
         .duty_resolution = DUTY_RESOLUTION,
         .timer_num = LEDC_TIMER_0,
         .clk_cfg = LEDC_AUTO_CLK,
-        .freq_hz = LIFT_DEFAULT_SPEED};
+        .freq_hz = newHandle->speed};
 
     err = ledc_timer_config(&timer_conf);
     if (err != ESP_OK)
@@ -556,11 +565,11 @@ uint32_t lift_get_speed(lift_device_handle_t handle)
 
 lift_err_t lift_set_speed(lift_device_handle_t handle, uint32_t speed)
 {
-    if (speed > LIFT_MAX_SPEED)
+    if (speed > handle->max_speed)
     {
         return LIFT_SPEED_TOO_HIGH;
     }
-    else if (speed < LIFT_MIN_SPEED)
+    else if (speed < handle->min_speed)
     {
         return LIFT_SPEED_TOO_LOW;
     }

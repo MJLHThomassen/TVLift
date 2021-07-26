@@ -121,5 +121,6 @@
         "webserver_task.h": "c",
         "esp_err.h": "c"
     },
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "cmake.configureOnOpen": false
 }

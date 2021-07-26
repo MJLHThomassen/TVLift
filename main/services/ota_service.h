@@ -30,7 +30,7 @@ ota_service_err_t ota_service_firmware_update_begin(ota_state_handle_t* handle);
 /**
  * @brief Write a chunck of data for the firmware.
  * 
- * @param]in] handle Handle that holds resources for the firmware update.
+ * @param[in] handle Handle that holds resources for the firmware update.
  * @param[in] data The firware data bytes to write.
  * @param[in] length The amount of bytes in data.
  * @return ota_service_err_t

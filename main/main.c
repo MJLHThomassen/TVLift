@@ -27,9 +27,10 @@
 #include <esp_sntp.h>
 
 #include <ds1307.h>
+#include <logger.h>
+
 #include <sdkconfig.h>
 #include <services/spiffs_service.h>
-#include <services/logger_service.h>
 #include <tasks/blink/blink_task.h>
 #include <tasks/webserver/webserver_task.h>
 
@@ -263,6 +264,7 @@ static void initialize_sntp(void)
 
 void initialize_app(void)
 {
+    // TODO: How to "automatically" call this when logger service is defined?
     logger_service_init();
     logger_service_register_sink(serial_logger_sink, NULL);
     esp_log_set_vprintf(logger_service_vprintf);
@@ -303,7 +305,7 @@ void initialize_app(void)
 
     const char* spiffsPartitionLabel = spiffs_service_get_spiffs_partition_label_for_app_partition(currentPartition->label);
     spiffs_service_mount(spiffsPartitionLabel, "/data");
-   
+
     // I2C conflicts with Lift Pul and Lift Dir on current board
     // initialize_i2c();
 

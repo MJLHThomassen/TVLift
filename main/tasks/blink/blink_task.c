@@ -5,7 +5,7 @@
 
 #include <driver/gpio.h>
 
-#include <services/logger_service.h>
+#include <logger.h>
 #include <services/status_service.h>
 
 static const char* TAG = BLINK_TASK_TAG;

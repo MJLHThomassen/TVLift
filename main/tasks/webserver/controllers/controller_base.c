@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include <services/logger_service.h>
+#include <logger.h>
 
 static char TAG[] = "Controller Base";
 
