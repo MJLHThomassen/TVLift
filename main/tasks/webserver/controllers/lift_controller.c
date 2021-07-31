@@ -8,16 +8,19 @@
 #include <pins.h>
 #include <logger.h>
 #include <lift/lift.h>
+#include <services/lift_service.h>
+#include <services/settings_service.h>
 
 #define controllerUri "/lift"
 
 static char TAG[] = __FILE__;
 
-static lift_device_handle_t liftHandle = NULL;
-
 static uint32_t getSpeed(struct http_message* message)
 {
-    uint32_t speed = LIFT_DEFAULT_SPEED;   
+    const settings_t* settings;
+    settings_service_load(&settings);
+
+    uint32_t speed = settings->lift_default_speed;   
 
     json_scanf(
         message->body.p,
@@ -32,6 +35,8 @@ static uint32_t getSpeed(struct http_message* message)
 
 static void status_get_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
+    lift_device_handle_t liftHandle = lift_service_get_lift_device_handle();
+
     char* str = json_asprintf(
         "{"
             "status: %Q"
@@ -46,6 +51,7 @@ static void status_get_handler(struct mg_connection* nc, struct http_message* me
 static void up_post_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
     lift_err_t liftErr;
+    lift_device_handle_t liftHandle = lift_service_get_lift_device_handle();
 
     uint32_t speed = getSpeed(message);
     liftErr = lift_set_speed(liftHandle, speed);
@@ -68,6 +74,7 @@ static void up_post_handler(struct mg_connection* nc, struct http_message* messa
 static void down_post_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
     lift_err_t liftErr;
+    lift_device_handle_t liftHandle = lift_service_get_lift_device_handle();
 
     uint32_t speed = getSpeed(message);
     liftErr = lift_set_speed(liftHandle, speed);
@@ -89,6 +96,7 @@ static void down_post_handler(struct mg_connection* nc, struct http_message* mes
 
 static void stop_post_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
+    lift_device_handle_t liftHandle = lift_service_get_lift_device_handle();
     lift_err_t liftErr = lift_stop(liftHandle);
     if(liftErr != LIFT_OK)
     {
@@ -101,6 +109,8 @@ static void stop_post_handler(struct mg_connection* nc, struct http_message* mes
 
 static void speed_get_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
+    lift_device_handle_t liftHandle = lift_service_get_lift_device_handle();
+
     char* str = json_asprintf(
         "{"
             "speed: %u"
@@ -115,6 +125,7 @@ static void speed_get_handler(struct mg_connection* nc, struct http_message* mes
 static void speed_post_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
     lift_err_t liftErr;
+    lift_device_handle_t liftHandle = lift_service_get_lift_device_handle();
 
     uint32_t speed = getSpeed(message);
     liftErr = lift_set_speed(liftHandle, speed);
@@ -192,17 +203,12 @@ void lift_controller_register_uri_handlers(struct mg_connection* nc, const char*
     // Register status uri
     register_uri_handler(nc, rootUri, &status_handler_info);
 
-    // Initialize lift
-    if(lift_add_device(PIN_NUM_ENA, PIN_NUM_DIR, PIN_NUM_PUL, PIN_NUM_END_DOWN, PIN_NUM_END_UP, &liftHandle) != LIFT_OK)
+    if(lift_service_get_lift_device_handle() != NULL)
     {
-        lift_remove_device(liftHandle);
-        liftHandle = NULL;
-        return;
+        // Register other uri's
+        register_uri_handler(nc, rootUri, &up_handler_info);
+        register_uri_handler(nc, rootUri, &down_handler_info);
+        register_uri_handler(nc, rootUri, &stop_handler_info);
+        register_uri_handler(nc, rootUri, &speed_handler_info);
     }
-
-    // Register other uri's
-    register_uri_handler(nc, rootUri, &up_handler_info);
-    register_uri_handler(nc, rootUri, &down_handler_info);
-    register_uri_handler(nc, rootUri, &stop_handler_info);
-    register_uri_handler(nc, rootUri, &speed_handler_info);
 }

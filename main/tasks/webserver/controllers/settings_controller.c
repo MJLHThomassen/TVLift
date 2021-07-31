@@ -33,12 +33,8 @@ static settings_t getSettings(struct http_message* message)
 
 static void settings_get_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
-    settings_err_t err;
-    settings_t settings;
-
-    err = settings_service_load(&settings);
-
-    if(err != SETTINGS_SERVICE_OK)
+    const settings_t* settings;
+    if(settings_service_load(&settings) != SETTINGS_SERVICE_OK)
     {
         mg_http_send_error(nc, 500, "Can not read settings.");
         return;
@@ -46,15 +42,15 @@ static void settings_get_handler(struct mg_connection* nc, struct http_message* 
 
     char* str = json_asprintf(
         "{"
-            "version": %u,
-            "liftMinSpeed: %u",
-            "liftMaxSpeed: %u",
+            "version: %u,"
+            "liftMinSpeed: %u,"
+            "liftMaxSpeed: %u,"
             "liftDefaultSpeed: %u"
         "}",
-        settings.version,
-        settings.lift_min_speed,
-        settings.lift_max_speed,
-        settings.lift_default_speed
+        settings->version,
+        settings->lift_min_speed,
+        settings->lift_max_speed,
+        settings->lift_default_speed
     );
 
     mg_send_head(nc, 200, strlen(str), NULL);
@@ -64,14 +60,11 @@ static void settings_get_handler(struct mg_connection* nc, struct http_message* 
 
 static void settings_post_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
-    settings_err_t err;
-
     settings_t settings = getSettings(message);
-    err = settings_service_save(&settings);
 
     // TODO: Propagate settings
 
-    if(err != SETTINGS_SERVICE_OK)
+    if(settings_service_save(&settings) != SETTINGS_SERVICE_OK)
     {
         mg_http_send_error(nc, 500, "Can not modify settings.");
         return;

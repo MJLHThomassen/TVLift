@@ -21,7 +21,7 @@ typedef struct settings_s
     uint32_t    lift_default_speed;
 } settings_t;
 
-settings_service_err_t settings_service_load(settings_t * settings);
+settings_service_err_t settings_service_load(const settings_t ** settings);
 settings_service_err_t settings_service_save(const settings_t * settings);
 
 #endif // SETTINGS_SERVICE_H

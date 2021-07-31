@@ -3,6 +3,7 @@ idf_component_register(
         "lift/lift.c"
         
         "services/ota_service.c"
+        "services/lift_service.c"
         "services/settings_service.c"
         "services/spiffs_service.c"
         "services/status_service.c"

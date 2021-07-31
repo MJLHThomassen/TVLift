@@ -30,6 +30,7 @@
 #include <logger.h>
 
 #include <sdkconfig.h>
+#include <services/lift_service.h>
 #include <services/spiffs_service.h>
 #include <tasks/blink/blink_task.h>
 #include <tasks/webserver/webserver_task.h>
@@ -340,6 +341,8 @@ void initialize_app(void)
     initialise_mdns();
     initialise_wifi();
     initialize_sntp();
+
+    lift_service_init();
 
     TaskHandle_t blinkTaskHandle = NULL; 
     xTaskCreatePinnedToCore(

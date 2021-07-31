@@ -489,7 +489,7 @@ lift_err_t lift_add_device(
     return LIFT_OK;
 }
 
-lift_err_t lift_remove_device(lift_device_handle_t handle)
+void lift_remove_device(lift_device_handle_t handle)
 {
     LOG_I(TAG, "Removing lift device %x", (unsigned int)handle);
 
@@ -517,8 +517,6 @@ lift_err_t lift_remove_device(lift_device_handle_t handle)
 
         free(handle);
     }
-
-    return LIFT_OK;
 }
 
 static lift_err_t lift_send_command(const lift_device_handle_t handle, const lift_command_t command)
@@ -558,7 +556,7 @@ lift_err_t lift_stop(const lift_device_handle_t handle)
 //     return LIFT_OK;
 // }
 
-uint32_t lift_get_speed(lift_device_handle_t handle)
+uint32_t lift_get_speed(const lift_device_handle_t handle)
 {
     return handle->speed;
 }
