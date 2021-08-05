@@ -4,7 +4,7 @@
         "options": {
             "shell": {
                 "executable": "C:\\WINDOWS\\System32\\cmd.exe",
-                "args": ["/c", "%IDF_PATH%\\export.bat", "&"]
+                "args": ["/c", "${config:idf.espIdfPathWin}\\export.bat", "&"]
             }
         }
     },
