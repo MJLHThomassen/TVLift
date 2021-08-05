@@ -21,6 +21,23 @@
             "command": "idf",
             "args": [ "build" ],
 			"problemMatcher": [ "$gcc" , "$gccte"]
+		},
+        {
+			"label": "firmware/flash",
+            "type": "shell",
+            "command": "idf",
+            "args": [ "flash" ]
+		},
+        {
+			"label": "firmware/monitor",
+            "type": "shell",
+            "command": "idf",
+            "args": [ "monitor" ]
+		},
+        {
+			"label": "firmware/build-flash-monitor",
+            "dependsOn": [ "firmware/build", "firmware/flash", "firmware/monitor" ],
+            "dependsOrder": "sequence"
 		}
 	]
 }
