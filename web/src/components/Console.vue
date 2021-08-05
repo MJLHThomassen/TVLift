@@ -17,7 +17,7 @@ import * as Ansicolor from "ansicolor";
 interface ConsoleLine
 {
   index: number;
-  spans: any[];
+  spans: Ansicolor.ParsedSpan[];
 }
 
 @Component
@@ -39,7 +39,7 @@ export default class Console extends Vue
   }
 
   @Watch("newEntry")
-  private onEntriesChanged(value: string, oldValue: string): void
+  private onEntriesChanged(value: string): void
   {
     this.addConsoleLines(value);
   }

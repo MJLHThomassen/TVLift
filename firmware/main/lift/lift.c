@@ -169,7 +169,7 @@ static void lift_monitor_task(void* arg)
                 lift_stop_pul(handle);
             }
 
-            if (endstopGpio == handle->endstopDownConfig.gpio)
+            if (endstopGpio == handle->endstopDownConfig.gpio && isEndstopActive)
             {
                 LOG_I(TAG, "Endstop down triggered");
 
@@ -579,5 +579,27 @@ lift_err_t lift_set_speed(lift_device_handle_t handle, uint32_t speed)
     }
 
     handle->speed = speed;
+    return LIFT_OK;
+}
+
+lift_err_t lift_set_speed_limits(lift_device_handle_t handle, uint32_t minSpeed, uint32_t maxSpeed)
+{
+    if(minSpeed > maxSpeed)
+    {
+        return LIFT_LIMITS_INVALID;
+    }
+
+    handle->min_speed = minSpeed;
+    handle->max_speed = maxSpeed;
+
+    if(handle->speed < minSpeed)
+    {
+        return lift_set_speed(handle, minSpeed);
+    }
+    else if(handle->speed > maxSpeed)
+    {
+        return lift_set_speed(handle, maxSpeed);
+    }
+
     return LIFT_OK;
 }

@@ -30,7 +30,7 @@ export class StatusService implements IStatusService
     }
 
     public constructor(
-        @inject(IWebsocketService.name) private readonly websocketService: IWebsocketService,
+        @inject("IWebsocketService") private readonly websocketService: IWebsocketService,
         private readonly liftRepository: LiftRepository)
     {
         this.pollLiftStatus();
@@ -39,7 +39,7 @@ export class StatusService implements IStatusService
     private pollLiftStatus(): Promise<void>
     {
         return this.liftRepository.getStatus()
-            .then(async(status) =>
+            .then(async (status) =>
             {
                 this._liftStatus = status.status;
             })

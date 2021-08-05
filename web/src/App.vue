@@ -47,7 +47,7 @@
 import { Component, Vue, Provide } from "vue-property-decorator";
 
 import "reflect-metadata";
-import { container, DependencyContainer } from "tsyringe";
+import { container } from "tsyringe";
 
 import Axios, { AxiosInstance } from "axios";
 import { IStatusService } from "@/services/iStatusService";
@@ -58,26 +58,30 @@ import { WebsocketService } from "@/services/websocketService";
 import { WifiOffIcon } from "vue-feather-icons";
 
 import "mini.css/dist/mini-dark.min.css";
-
 //#region DI
 
 // Register Constants
-//const deviceUri: "http://tvlift.local/api/";
-const baseUri: string = process.env.NODE_ENV === "development" ? "http://localhost:8081/api" : "api/";
-container.registerInstance("baseUri", baseUri );
+const baseUri = new URL(process.env.VUE_APP_BASEURI);
+const apiUri = new URL("api", baseUri);
+
+container.registerInstance("baseUri", baseUri);
+container.registerInstance("apiUri", apiUri);
+
+console.log("baseUri: ", container.resolve<URL>("baseUri"));
+console.log("apiUri: ", container.resolve<URL>("apiUri"));
 
 // Register 3rd Party Services
 container.registerInstance(
     "AxiosInstance",
     Axios.create({
-        baseURL: container.resolve<string>("baseUri"),
-        timeout: 200
+        baseURL: container.resolve<URL>("apiUri").toString(),
+        timeout: 200,
     })
 );
 
 // Register Services
-container.registerSingleton(WebsocketService).registerType(IWebsocketService.name, WebsocketService);
-container.registerSingleton(StatusService).registerType(IStatusService.name, StatusService);
+container.registerSingleton(WebsocketService).registerType("IWebsocketService", WebsocketService);
+container.registerSingleton(StatusService).registerType("IStatusService", StatusService);
 
 //#endregion
 
@@ -91,8 +95,8 @@ export default class App extends Vue
 {
     @Provide() private axios = container.resolve<AxiosInstance>("AxiosInstance");
 
-    @Provide() private websocketService = container.resolve<IWebsocketService>(WebsocketService);
-    @Provide() private statusService = container.resolve<IStatusService>(StatusService);
+    @Provide() private websocketService = container.resolve<IWebsocketService>("IWebsocketService");
+    @Provide() private statusService = container.resolve<IStatusService>("IStatusService");
 }
 </script>
 

@@ -3,21 +3,21 @@
         {
             "name": "ESP32",
             "includePath": [
-                "${workspaceRoot}",
-                "${workspaceRoot}/**",
+                "${workspaceFolder:firmware}",
+                "${workspaceFolder:firmware}/**",
                 "${env:IDF_PATH}/components/**"
             ],
             "intelliSenseMode": "${default}",
             "browse": {
                 "path": [
-                    "${workspaceRoot}",
-                    "${workspaceRoot}/**",
+                    "${workspaceFolder:firmware}",
+                    "${workspaceFolder:firmware}/**",
                     "${env:IDF_PATH}/components"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": "${workspaceRoot}/.vscode/browse.vc.db"
+                "databaseFilename": "${workspaceFolder:firmware}/.vscode/browse.vc.db"
             },
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "compileCommands": "${workspaceFolder:firmware}/build/compile_commands.json",
             "cStandard": "c11",
             "cppStandard": "c++11",
             "defines": [

@@ -4,14 +4,14 @@ export enum ConnectionStatus
 {
     Disconnected,
     Connecting,
-    Connected
+    Connected,
 }
 
-export abstract class IStatusService
+export interface IStatusService
 {
-    readonly connectionStatus!: ConnectionStatus;
-    readonly isConnected!: boolean;
+    readonly connectionStatus: ConnectionStatus;
+    readonly isConnected: boolean;
 
-    readonly liftStatus!: LiftStatus;
-    readonly isLiftOnline!: boolean;
+    readonly liftStatus: LiftStatus;
+    readonly isLiftOnline: boolean;
 }

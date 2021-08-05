@@ -1,5 +1,0 @@
-{
-  // Extending web tsconfig.json in root of project so typescript intellisense works properly.
-  // See https://github.com/vuejs/vetur/issues/423#issuecomment-384255018
-  "extends": "./web/tsconfig.json"
-}

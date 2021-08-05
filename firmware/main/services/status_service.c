@@ -3,10 +3,10 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-static service_handle_t handleCounter = 0;
+static service_handle_t _handleCounter = 0;
 static map _services = NULL;
 
-static status_service_registration_handle_t registrationCounter = 0;
+static status_service_registration_handle_t _registrationCounter = 0;
 static map _registrations = NULL;
 
 service_handle_t status_service_add_service(const char* name)
@@ -16,7 +16,7 @@ service_handle_t status_service_add_service(const char* name)
         map_new(&_services);
     }
 
-    service_handle_t handle = handleCounter++;
+    service_handle_t handle = _handleCounter++;
 
     service_info_t* item = (service_info_t*) malloc(sizeof(service_info_t));
     item->name = name;
@@ -69,7 +69,7 @@ status_service_registration_handle_t status_service_register(on_service_status_c
         map_new(&_registrations);
     }
 
-    status_service_registration_handle_t handle = registrationCounter++;
+    status_service_registration_handle_t handle = _registrationCounter++;
 
     map_add(_registrations, (void*)handle, callback);
 

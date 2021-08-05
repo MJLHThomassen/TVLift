@@ -102,7 +102,9 @@ export default class LiftControls extends Vue
 
     private liftGoUp(): void
     {
-        this.axios.post("lift/up", <SpeedMessage>{ speed: this.currentSpeed });
+        this.axios.post("lift/up", <SpeedMessage>{ 
+            speed: this.currentSpeed,
+        });
     }
 
     private liftGoDown(): void

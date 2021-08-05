@@ -1,29 +1,27 @@
-const CompressionPlugin = require('compression-webpack-plugin');
+// const CompressionPlugin = require('compression-webpack-plugin');
 
 // Set environment variables
 process.env.VUE_APP_VERSION = Date().toString();
 
 // Modify configuration
 module.exports = {
-    outputDir: "../main/data/www",
-    productionSourceMap: false,
+    outputDir: "../firmware/data/www",
     filenameHashing: false,
-    chainWebpack: config => 
-    {
+    // css: {
+    //     loaderOptions: {
+    //         sass: {
+    //             implementation: require('sass'),
+    //         },
+    //     },
+    // },
+    chainWebpack: config => {
         // Remove splitChunks
         config
             .optimization
             .delete("splitChunks");
 
-        // Proxy websocket to our test tool hosted on port 8081
         config
-            .devServer
-            .proxy({
-                "/api": {
-                    target: "http://localhost:8081",
-                    ws: true,
-                }
-            });
+            .devtool("source-map");
 
         // config
         //     .plugin("compression")

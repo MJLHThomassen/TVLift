@@ -17,6 +17,8 @@ project(tv-lift)
 # set(CMAKE_C_STANDARD_REQUIRED ON)
 # set(CMAKE_C_STANDARD 11)
 
+spiffs_create_partition_image("spiffs_0" "data" FLASH_IN_PROJECT)
+
 # Create update file after bin file has been created
 idf_build_get_property(build_dir BUILD_DIR)
 add_custom_target(create-ota-file ALL

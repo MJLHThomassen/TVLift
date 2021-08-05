@@ -10,7 +10,8 @@ typedef enum
 
     LIFT_AT_ENDSTOP = 1,
     LIFT_SPEED_TOO_HIGH,
-    LIFT_SPEED_TOO_LOW
+    LIFT_SPEED_TOO_LOW,
+    LIFT_LIMITS_INVALID
 } lift_err_t;
 
 typedef struct lift_device_s* lift_device_handle_t;
@@ -33,5 +34,6 @@ lift_err_t lift_stop(const lift_device_handle_t handle);
 
 uint32_t lift_get_speed(const lift_device_handle_t handle);
 lift_err_t lift_set_speed(lift_device_handle_t handle, uint32_t speed);
+lift_err_t lift_set_speed_limits(lift_device_handle_t handle, uint32_t minSpeed, uint32_t maxSpeed);
 
 #endif // LIFT_H

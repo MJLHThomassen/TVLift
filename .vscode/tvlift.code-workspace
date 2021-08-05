@@ -1,0 +1,40 @@
+{
+	"folders": [
+		{
+			// Web needs to be first for Vetur extension to work properly.
+  			// See https://github.com/vuejs/vetur/issues/423#issuecomment-384255018
+			"name": "web",
+			"path": "../web"
+		},
+		{
+			"name": "firmware",
+			"path": "../firmware"
+		},
+		{
+			"name": "tools",
+			"path": "../tools"
+		},
+		{
+			"name": "vscode-extensions",
+			"path": "../vscode-extensions"
+		},
+		{
+			"name": "root",
+			"path": "../"
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"firmware": true,
+			"tools": true,
+			"web": true,
+			"**/node_modules/": true
+		},
+		"git.ignoreLimitWarning": true,
+		"idf.saveScope": 3,
+		"taskExplorer.exclude": [
+			"**/components/**"
+		],
+		"vetur.validation.template": false
+	}	
+}

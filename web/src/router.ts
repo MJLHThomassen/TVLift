@@ -1,6 +1,5 @@
 import Vue from "vue";
 import Router from "vue-router";
-import LiftControls from "./views/LiftControls.vue";
 
 Vue.use(Router);
 

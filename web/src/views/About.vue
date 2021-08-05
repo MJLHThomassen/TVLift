@@ -16,12 +16,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
+import { Component, Vue } from "vue-property-decorator";
 
 @Component({})
 export default class About extends Vue
 {
-  private version: string = `${process.env.VUE_APP_VERSION} (${process.env.NODE_ENV})`;
+  private version = `${process.env.VUE_APP_VERSION} (${process.env.NODE_ENV})`;
 
   public constructor()
   {

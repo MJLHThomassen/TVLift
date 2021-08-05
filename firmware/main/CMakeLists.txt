@@ -36,6 +36,7 @@ idf_component_register(
         nvs_flash
         spiffs
 )
+
 target_compile_definitions(
     ${COMPONENT_LIB}
     PRIVATE
@@ -45,5 +46,3 @@ target_compile_options(
     ${COMPONENT_LIB}
     PRIVATE 
         -std=gnu11)
-
-spiffs_create_partition_image("spiffs_0" "data" FLASH_IN_PROJECT)

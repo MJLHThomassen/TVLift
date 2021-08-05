@@ -2,11 +2,11 @@ import { ConnectionStatus } from "@/services/iStatusService";
 
 export interface MessageReceivedCallback
 {
-    (event: MessageEvent): void;
+    (event: MessageEvent): void
 }
 
-export abstract class IWebsocketService
+export interface IWebsocketService
 {
-    readonly connectionStatus!: ConnectionStatus;
-    abstract onMessageRecieved(callback: MessageReceivedCallback): void;
+    readonly connectionStatus: ConnectionStatus;
+    onMessageRecieved(callback: MessageReceivedCallback): void;
 }

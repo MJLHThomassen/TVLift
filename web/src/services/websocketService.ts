@@ -1,3 +1,4 @@
+import { injectable, inject } from "tsyringe";
 import { ConnectionStatus } from "@/services/iStatusService";
 import { IWebsocketService, MessageReceivedCallback } from "@/services/iWebsocketService";
 import { sleep, promiseWithTimeout } from "@/services/sleep";
@@ -8,10 +9,12 @@ enum WebsocketPromiseRejectionReasons
     Timeout
 }
 
+@injectable()
 export class WebsocketService implements IWebsocketService
 {
     private readonly websocketTimeoutTimeMs = 2000;
     private readonly websocketRetryTimeMs = 1000;
+    private readonly websocketUri: URL;
 
     private webSocket: WebSocket | null = null;
     private messageRecievedCallbacks: MessageReceivedCallback[] = [];
@@ -22,9 +25,13 @@ export class WebsocketService implements IWebsocketService
         return this._connectionStatus;
     }
 
-    public constructor(
-        private readonly websocketUri: string = "ws://" + location.host + "/api")
+    public constructor(@inject("apiUri") apiUri: URL)
     {
+        apiUri.protocol = "ws";
+        this.websocketUri = apiUri;
+
+        console.log("websocketuri: ", this.websocketUri);
+
         this.initialiseWebSocket();
     }
 
@@ -37,7 +44,7 @@ export class WebsocketService implements IWebsocketService
     {
         this.webSocket = await this.connectWebSocket();
 
-        this.webSocket.onclose = (e) =>
+        this.webSocket.onclose = () =>
         {
             this._connectionStatus = ConnectionStatus.Disconnected;
             this.webSocket = null;
@@ -62,7 +69,7 @@ export class WebsocketService implements IWebsocketService
         let webSocket: WebSocket;
         try
         {
-            webSocket = new WebSocket(this.websocketUri);
+            webSocket = new WebSocket(this.websocketUri.toString());
         }
         catch (e)
         {
@@ -75,13 +82,13 @@ export class WebsocketService implements IWebsocketService
         // or rejects when the websocket could not connect due to an error.
         const websocketPromise = new Promise<WebSocket>((resolve, reject) =>
         {
-            webSocket.onopen = (e) =>
-            { 
+            webSocket.onopen = () =>
+            {
                 this._connectionStatus = ConnectionStatus.Connected;
                 resolve(webSocket); 
             };
-            webSocket.onerror = (e) => 
-            { 
+            webSocket.onerror = () =>
+            {
                 this._connectionStatus = ConnectionStatus.Disconnected;
                 reject(WebsocketPromiseRejectionReasons.Error);
             };

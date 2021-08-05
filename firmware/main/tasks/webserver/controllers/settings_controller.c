@@ -34,7 +34,9 @@ static settings_t getSettings(struct http_message* message)
 static void settings_get_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
     const settings_t* settings;
-    if(settings_service_load(&settings) != SETTINGS_SERVICE_OK)
+    settings_service_err_t err = settings_service_load(&settings);
+
+    if(err == SETTINGS_SERVICE_FAIL)
     {
         mg_http_send_error(nc, 500, "Can not read settings.");
         return;
@@ -61,8 +63,6 @@ static void settings_get_handler(struct mg_connection* nc, struct http_message* 
 static void settings_post_handler(struct mg_connection* nc, struct http_message* message, void* userData)
 {
     settings_t settings = getSettings(message);
-
-    // TODO: Propagate settings
 
     if(settings_service_save(&settings) != SETTINGS_SERVICE_OK)
     {

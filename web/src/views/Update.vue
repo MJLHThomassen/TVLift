@@ -30,8 +30,6 @@ import { Component, Vue } from "vue-property-decorator";
 import { UploadIcon } from "vue-feather-icons";
 import axios, { AxiosError } from "axios";
 
-import { sleep } from "@/services/sleep";
-
 @Component({
   components: {
     UploadIcon,
@@ -46,9 +44,9 @@ export default class LiftControls extends Vue
   }
 
   private selectedFirmwareFile: File | null = null;
-  private isUpdating: boolean = false;
-  private updateProgress: number = 0;
-  private updateErrorMessage: string = "";
+  private isUpdating = false;
+  private updateProgress = 0;
+  private updateErrorMessage = "";
 
   private firmwareFileChanged(event: Event): void
   {
@@ -106,7 +104,7 @@ export default class LiftControls extends Vue
     this.isUpdating = false;
   }
 
-  private isAxiosError(object: any): object is AxiosError
+  private isAxiosError(object: { isAxiosError: boolean }): object is AxiosError
   {
     return object.isAxiosError;
   }

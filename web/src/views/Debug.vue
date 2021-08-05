@@ -23,7 +23,7 @@ export default class Debug extends Vue
     @Inject()
     private readonly websocketService!: IWebsocketService;
 
-    private newEntry: string = "";
+    private newEntry = "";
 
     private created(): void
     {

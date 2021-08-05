@@ -32,7 +32,7 @@ export class LiftRepository
             {
                 console.error(e);
                 return {
-                    status: "offline"
+                    status: "offline",
                 };
             });
     }
@@ -40,33 +40,33 @@ export class LiftRepository
     public postUp(speed: number): Promise<void>
     {
         const data: LiftSpeedMessage = {
-            speed
+            speed,
         };
 
         return this.axios
             .post("lift/up", data)
-            .then(() => {  });
+            .then(() => { return; });
     }
 
     public postDown(speed: number): Promise<void>
     {
         const data: LiftSpeedMessage = {
-            speed
+            speed,
         };
 
         return this.axios
             .post("lift/down", data)
-            .then(() => {  });
+            .then(() => { return; });
     }
 
     public postSpeed(speed: number): Promise<void>
     {
         const data: LiftSpeedMessage = {
-            speed
+            speed,
         };
 
         return this.axios
             .post("lift/speed", data)
-            .then(() => {  });
+            .then(() => { return; });
     }
 }
