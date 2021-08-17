@@ -59,8 +59,9 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Inject } from "vue-property-decorator";
+import { Component, Vue, Inject, Watch } from "vue-property-decorator";
 import { IStatusService } from "@/services/iStatusService";
+import { LiftStatus } from "@/repositories/liftRepository";
 
 import {
     ArrowUpIcon,
@@ -87,7 +88,7 @@ interface SpeedMessage
 })
 export default class LiftControls extends Vue
 {
-    private currentSpeed: number = 0;
+    private currentSpeed = 0;
 
     @Inject()
     private readonly axios!: AxiosInstance;
@@ -99,19 +100,32 @@ export default class LiftControls extends Vue
     {
         this.updateSpeed();
     }
+    
+    @Watch("statusService.liftStatus")
+    private onLiftStatusChanged(val: LiftStatus, oldVal: LiftStatus): void
+    {
+        if(oldVal !== "online" && val === "online")
+        {
+            this.updateSpeed();
+        }
+    }
 
     private liftGoUp(): void
     {
-        this.axios.post("lift/up", <SpeedMessage>{ 
+        const msg: SpeedMessage = { 
             speed: this.currentSpeed,
-        });
+        };
+
+        this.axios.post("lift/up", msg);
     }
 
     private liftGoDown(): void
     {
-        this.axios.post("lift/down", <SpeedMessage>{
+        const msg: SpeedMessage = { 
             speed: this.currentSpeed,
-        });
+        };
+
+        this.axios.post("lift/down", msg);
     }
 
     private liftStop(): void
@@ -123,10 +137,13 @@ export default class LiftControls extends Vue
     {
         this.updateSpeed()
             .then(currentSpeed =>
-                this.axios.post("lift/speed",<SpeedMessage>{
+            {
+                const msg: SpeedMessage = {
                     speed: currentSpeed / 2,
-                })
-            )
+                };
+                
+                return this.axios.post("lift/speed", msg);
+            })
             .catch(e =>
             {
                 console.error(e);
@@ -138,10 +155,13 @@ export default class LiftControls extends Vue
     {
         this.updateSpeed()
             .then(currentSpeed =>
-                this.axios.post("lift/speed", <SpeedMessage>{
+            {
+                const msg: SpeedMessage = {
                     speed: currentSpeed * 2,
-                })
-            )
+                };
+                
+                return this.axios.post("lift/speed", msg);
+            })
             .catch(e =>
             {
                 console.error(e);

@@ -47,7 +47,7 @@
 import { Component, Vue, Provide } from "vue-property-decorator";
 
 import "reflect-metadata";
-import { container } from "tsyringe";
+import { container, FactoryProvider, Lifecycle, TokenProvider } from "tsyringe";
 
 import Axios, { AxiosInstance } from "axios";
 import { IStatusService } from "@/services/iStatusService";
@@ -58,17 +58,18 @@ import { WebsocketService } from "@/services/websocketService";
 import { WifiOffIcon } from "vue-feather-icons";
 
 import "mini.css/dist/mini-dark.min.css";
+
 //#region DI
 
 // Register Constants
-const baseUri = new URL(process.env.VUE_APP_BASEURI);
+const baseUri = new URL(process.env.VUE_APP_BASEURI ?? window.location.origin);
 const apiUri = new URL("api", baseUri);
 
 container.registerInstance("baseUri", baseUri);
 container.registerInstance("apiUri", apiUri);
 
-console.log("baseUri: ", container.resolve<URL>("baseUri"));
-console.log("apiUri: ", container.resolve<URL>("apiUri"));
+console.info("baseUri: ", container.resolve<URL>("baseUri"));
+console.info("apiUri: ", container.resolve<URL>("apiUri"));
 
 // Register 3rd Party Services
 container.registerInstance(
@@ -80,8 +81,9 @@ container.registerInstance(
 );
 
 // Register Services
-container.registerSingleton(WebsocketService).registerType("IWebsocketService", WebsocketService);
-container.registerSingleton(StatusService).registerType("IStatusService", StatusService);
+container.registerSingleton("IWebsocketService", WebsocketService);
+container.registerSingleton("IStatusService", StatusService);
+
 
 //#endregion
 

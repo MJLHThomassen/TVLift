@@ -5,18 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "chrome",
+            "type": "pwa-chrome",
             "request": "launch",
-            "name": "vuejs: chrome",
+            "name": "Launch Chrome against localhost",
             "url": "http://localhost:8080",
-            "webRoot":"${workspaceFolder}",
-            "breakOnLoad": true,
-            "sourceMapPathOverrides": {
-                "webpack:///./*": "${webRoot}/*"
-            },
-            "skipFiles": [
-                "${workspaceFolder}/node_modules/**/*"
-            ]
+            "webRoot": "${workspaceFolder}"
         }
     ]
 }

@@ -7,6 +7,7 @@ const uploadRouter = require("./routes/upload");
 const restServer = express();
 
 restServer.use(cors());
+restServer.use(express.json());
 restServer.use("/api/lift", liftRouter);
 restServer.use("/api/upload", uploadRouter);
 

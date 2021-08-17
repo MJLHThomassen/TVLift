@@ -30,7 +30,7 @@ export class WebsocketService implements IWebsocketService
         apiUri.protocol = "ws";
         this.websocketUri = apiUri;
 
-        console.log("websocketuri: ", this.websocketUri);
+        console.info("websocketuri: ", this.websocketUri);
 
         this.initialiseWebSocket();
     }

@@ -15,15 +15,14 @@
 			"path": "../tools"
 		},
 		{
-			"name": "vscode-extensions",
-			"path": "../vscode-extensions"
-		},
-		{
 			"name": "root",
 			"path": "../"
 		}
 	],
 	"settings": {
+		"files.associations": {
+			".env.*": "env"
+		},
 		"files.exclude": {
 			"firmware": true,
 			"tools": true,
