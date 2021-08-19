@@ -47,9 +47,11 @@
 import { Component, Vue, Provide } from "vue-property-decorator";
 
 import "reflect-metadata";
-import { container, FactoryProvider, Lifecycle, TokenProvider } from "tsyringe";
+import { container } from "tsyringe";
 
 import Axios, { AxiosInstance } from "axios";
+import { LiftRepository } from "./repositories/liftRepository";
+import { SettingsRepository } from "./repositories/settingsRepository";
 import { IStatusService } from "@/services/iStatusService";
 import { IWebsocketService } from "@/services/iWebsocketService";
 import { StatusService } from "@/services/statusService";
@@ -76,14 +78,17 @@ container.registerInstance(
     "AxiosInstance",
     Axios.create({
         baseURL: container.resolve<URL>("apiUri").toString(),
-        timeout: 200,
+        timeout: 500,
     })
 );
+
+// Register Repositories
+container.registerSingleton(LiftRepository);
+container.registerSingleton(SettingsRepository);
 
 // Register Services
 container.registerSingleton("IWebsocketService", WebsocketService);
 container.registerSingleton("IStatusService", StatusService);
-
 
 //#endregion
 
@@ -96,6 +101,9 @@ container.registerSingleton("IStatusService", StatusService);
 export default class App extends Vue
 {
     @Provide() private axios = container.resolve<AxiosInstance>("AxiosInstance");
+
+    @Provide() private liftRepository = container.resolve(LiftRepository);
+    @Provide() private settingsRepository = container.resolve(SettingsRepository);
 
     @Provide() private websocketService = container.resolve<IWebsocketService>("IWebsocketService");
     @Provide() private statusService = container.resolve<IStatusService>("IStatusService");

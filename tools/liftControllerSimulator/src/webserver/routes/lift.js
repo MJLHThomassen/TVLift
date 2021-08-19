@@ -18,12 +18,15 @@ router.route("/speed")
 
         if(!speed)
         {
-            res.status(500);
+            res.status(500).send();
+            console.error("Setting speed failed");
             return;
         }
 
         liftService.speed = speed;
-        res.status(200);
+        res.status(200).send();
+
+        console.log("Speed set to", speed);
     });
 
 router.post("/up", (req, res) => 

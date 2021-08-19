@@ -5,10 +5,6 @@
             <div class="container">
                 <template v-if="statusService.isLiftOnline">
                     <div class="row">
-                        <div class="col-sm">Speed: {{ currentSpeed }}</div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-sm-4 col-sm-offset-4">
                             <button v-on:click="liftGoUp">
                                 <arrow-up-icon size="5x" />
@@ -17,21 +13,21 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-sm-4">
+                        <!-- <div class="col-sm-4">
                             <button v-on:click="liftSlower">
                                 <minus-icon size="5x" />
                             </button>
-                        </div>
+                        </div> -->
                         <div class="col-sm-4">
                             <button v-on:click="liftStop">
                                 <square-icon size="5x" class="stop-button" />
                             </button>
                         </div>
-                        <div class="col-sm-4">
+                        <!-- <div class="col-sm-4">
                             <button v-on:click="liftFaster">
                                 <plus-icon size="5x" />
                             </button>
-                        </div>
+                        </div> -->
                     </div>
 
                     <div class="row">
@@ -40,6 +36,11 @@
                                 <arrow-down-icon size="5x" />
                             </button>
                         </div>
+                    </div>
+
+                    <div>
+                        <div class="col-sm">Speed: {{ currentSpeed }}</div>
+                        <input type="range" orient="vertical" :min="minSpeed" :max="maxSpeed" step="1" v-model="currentSpeed">
                     </div>
                 </template>
 
@@ -60,8 +61,10 @@
 
 <script lang="ts">
 import { Component, Vue, Inject, Watch } from "vue-property-decorator";
+import _throttle from "lodash/throttle";
+import { LiftRepository, LiftStatus } from "@/repositories/liftRepository";
+import { SettingsRepository } from "@/repositories/settingsRepository";
 import { IStatusService } from "@/services/iStatusService";
-import { LiftStatus } from "@/repositories/liftRepository";
 
 import {
     ArrowUpIcon,
@@ -70,12 +73,6 @@ import {
     PlusIcon,
     MinusIcon,
 } from "vue-feather-icons";
-import { AxiosInstance } from "axios";
-
-interface SpeedMessage
-{
-    speed: number;
-}
 
 @Component({
     components: {
@@ -89,16 +86,26 @@ interface SpeedMessage
 export default class LiftControls extends Vue
 {
     private currentSpeed = 0;
+    private minSpeed = 0;
+    private maxSpeed = 0;
 
     @Inject()
-    private readonly axios!: AxiosInstance;
+    private readonly liftRepository!: LiftRepository;
+
+    @Inject()
+    private readonly settingsRepository!: SettingsRepository;
 
     @Inject()
     private readonly statusService!: IStatusService;
 
-    private mounted(): void
+    private async mounted(): Promise<void>
     {
         this.updateSpeed();
+
+        const settings = await this.settingsRepository.getSettings();
+        console.log(settings);
+        this.minSpeed = settings.liftMinSpeed;
+        this.maxSpeed = settings.liftMaxSpeed;
     }
     
     @Watch("statusService.liftStatus")
@@ -110,79 +117,75 @@ export default class LiftControls extends Vue
         }
     }
 
+    @Watch("currentSpeed")
+    private onCurrentSpeedChanged(val: number): void
+    {
+        console.log("onCurrentSpeedChanged called");
+        this.do(val);
+    }
+
+    private doit = (val: number) =>
+    {
+        console.log("onCurrentSpeedChanged executed", this);
+        this.liftRepository
+            .postSpeed(val)
+            .catch(console.error);
+    };
+
+    private do: (val: number) => void = _throttle(this.doit, 200);
+
     private liftGoUp(): void
     {
-        const msg: SpeedMessage = { 
-            speed: this.currentSpeed,
-        };
-
-        this.axios.post("lift/up", msg);
+        this.liftRepository
+            .postUp(this.currentSpeed)
+            .catch(console.error);
     }
 
     private liftGoDown(): void
     {
-        const msg: SpeedMessage = { 
-            speed: this.currentSpeed,
-        };
-
-        this.axios.post("lift/down", msg);
+        this.liftRepository
+            .postDown(this.currentSpeed)
+            .catch(console.error);
     }
 
     private liftStop(): void
     {
-        this.axios.post("lift/stop");
+        this.liftRepository
+            .postStop()
+            .catch(console.error);
     }
 
-    private liftSlower(): void
+    private async liftSlower(): Promise<void>
     {
-        this.updateSpeed()
-            .then(currentSpeed =>
-            {
-                const msg: SpeedMessage = {
-                    speed: currentSpeed / 2,
-                };
-                
-                return this.axios.post("lift/speed", msg);
-            })
-            .catch(e =>
-            {
-                console.error(e);
-            })
-            .then(this.updateSpeed);
+        const currentSpeed = await this.updateSpeed();
+        await this.liftRepository
+            .postSpeed(currentSpeed/2)
+            .catch(console.error);
+        await this.updateSpeed();
     }
 
-    private liftFaster(): void
+    private async liftFaster(): Promise<void>
     {
-        this.updateSpeed()
-            .then(currentSpeed =>
-            {
-                const msg: SpeedMessage = {
-                    speed: currentSpeed * 2,
-                };
-                
-                return this.axios.post("lift/speed", msg);
-            })
-            .catch(e =>
-            {
-                console.error(e);
-            })
-            .then(this.updateSpeed);
+        const currentSpeed = await this.updateSpeed();
+        await this.liftRepository
+            .postSpeed(currentSpeed*2)
+            .catch(console.error);
+        await this.updateSpeed();
     }
 
-    private updateSpeed(): Promise<number>
+    private async updateSpeed(): Promise<number>
     {
-        return this.axios
-            .get<SpeedMessage>("lift/speed")
-            .then(x =>
-            {
-                this.currentSpeed = x.data.speed;
-                return this.currentSpeed;
-            })
-            .catch(e =>
-            {
-                console.error(e);
-                return this.currentSpeed;
-            });
+        try
+        {
+            const speedMessage = await this.liftRepository.getSpeed();
+            this.currentSpeed = speedMessage.speed;
+        }
+        catch(e)
+        {
+            console.error(e);
+        }
+
+        return this.currentSpeed;
     }
 }
 </script>
@@ -196,6 +199,12 @@ export default class LiftControls extends Vue
 .stop-button
 {
     color: var(--error-color);
+}
+
+input[type="range"][orient="vertical"]
+{
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
 }
 </style>
 
