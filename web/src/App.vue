@@ -3,25 +3,44 @@
 
         <!-- Global Header -->
         <header class="sticky">
-            <router-link class="logo" to="/">TV Lift</router-link>
+            <router-link class="logo" to="/"> TV Lift </router-link>
+            <router-link
+                v-for="route in headerbarRoutes"
+                :key="route.path"
+                class="button hidden-sm"
+                :to="route.path"
+            >
+                {{ route.meta.displayName }}
+            </router-link>
 
             <div  style="float:right;">
                 <!-- Status -->
                 <wifi-off-icon class="disconnected-icon" v-if="!statusService.isConnected"></wifi-off-icon>
 
                 <!-- Menu Button -->
-                <label for="drawer-control" class="button drawer-toggle persistent"></label>
+                <label for="drawer-control" class="button drawer-toggle persistent hidden-md hidden-lg"></label>
             </div>
 
             <!-- Menu -->
-            <input type="checkbox" id="drawer-control" class="drawer persistent">
+            <input
+                type="checkbox"
+                id="drawer-control"
+                class="drawer persistent"
+                v-model="isMenuOpen"
+            >
             <nav>
                 <h3>Menu</h3>
                 <label for="drawer-control" class="drawer-close"></label>
                 <!-- <div>
                 <input style="width: 100%; margin: 0px;" placeholder="Search..." type="search" id="search-bar" oninput="search()">
                 </div> -->
-                <router-link v-for="route in $router.options.routes" :key="route.path" :to="route.path">{{ route.meta.displayName }}</router-link>
+                <router-link
+                    v-for="route in $router.options.routes"
+                    :key="route.path"
+                    :to="route.path"
+                >
+                    {{ route.meta.displayName }}
+                </router-link>
             </nav>
         </header>
 
@@ -45,6 +64,7 @@
 
 <script lang="ts">
 import { Component, Vue, Provide } from "vue-property-decorator";
+import { RouteConfig } from "vue-router";
 
 import "reflect-metadata";
 import { container } from "tsyringe";
@@ -54,12 +74,13 @@ import { LiftRepository } from "./repositories/liftRepository";
 import { SettingsRepository } from "./repositories/settingsRepository";
 import { IStatusService } from "@/services/iStatusService";
 import { IWebsocketService } from "@/services/iWebsocketService";
+import { ConsoleService } from "@/services/consoleService";
 import { StatusService } from "@/services/statusService";
 import { WebsocketService } from "@/services/websocketService";
 
 import { WifiOffIcon } from "vue-feather-icons";
 
-import "mini.css/dist/mini-dark.min.css";
+import "mini.css/dist/mini-dark.min.css"
 
 //#region DI
 
@@ -87,8 +108,9 @@ container.registerSingleton(LiftRepository);
 container.registerSingleton(SettingsRepository);
 
 // Register Services
-container.registerSingleton("IWebsocketService", WebsocketService);
+container.registerSingleton(ConsoleService);
 container.registerSingleton("IStatusService", StatusService);
+container.registerSingleton("IWebsocketService", WebsocketService);
 
 //#endregion
 
@@ -105,8 +127,33 @@ export default class App extends Vue
     @Provide() private liftRepository = container.resolve(LiftRepository);
     @Provide() private settingsRepository = container.resolve(SettingsRepository);
 
-    @Provide() private websocketService = container.resolve<IWebsocketService>("IWebsocketService");
+    @Provide() private consoleService = container.resolve(ConsoleService);
     @Provide() private statusService = container.resolve<IStatusService>("IStatusService");
+    @Provide() private websocketService = container.resolve<IWebsocketService>("IWebsocketService");
+
+    private isMenuOpen = false;
+
+    private get headerbarRoutes(): RouteConfig[]
+    {
+        return this.$router.options.routes?.filter(route =>
+        {
+            return route.path !== "/";
+        }) ?? [];
+    }
+
+    private mounted(): void
+    {
+        this.$router.afterEach((to, from) => 
+        {
+            console.log("I did it!", to , from);
+            this.closeMenu();
+        });
+    }
+    
+    private closeMenu(): void
+    {
+        this.isMenuOpen = false;
+    }
 }
 </script>
 

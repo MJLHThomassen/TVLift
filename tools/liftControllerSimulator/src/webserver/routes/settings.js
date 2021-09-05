@@ -9,7 +9,19 @@ router.route("/")
     })
     .post((req, res) => 
     {
-        res.status(501).send();
+        const settings = req.body;
+
+        if(!settings)
+        {
+            res.status(500).send();
+            console.error("Setting settings failed");
+            return;
+        }
+
+        liftService.settings = settings;
+        res.status(200).send();
+
+        console.log("Settings set to", settings);
     });
 
 module.exports = router;

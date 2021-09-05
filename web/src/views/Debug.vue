@@ -1,13 +1,14 @@
 <template>
     <div class="debug">
         <h2>Debug</h2>
-        <console :new-entry="newEntry"></console>
+        <div class="console-wrapper">
+            <console></console>
+        </div>
     </div>
 </template>
 
 <script lang="ts">
-import { Vue, Component, Inject } from "vue-property-decorator";
-import { IWebsocketService } from "@/services/iWebsocketService";
+import { Vue, Component } from "vue-property-decorator";
 
 import Console from "@/components/Console.vue";
 
@@ -18,29 +19,13 @@ import Console from "@/components/Console.vue";
 })
 export default class Debug extends Vue
 {
-    private readonly WebsocktUri: string = "ws://" + location.host + "/api";
-
-    @Inject()
-    private readonly websocketService!: IWebsocketService;
-
-    private newEntry = "";
-
-    private created(): void
-    {
-        this.websocketService.onMessageRecieved((event) => this.onWebSocketMessage(event));
-    }
-
-    private onWebSocketMessage(event: MessageEvent): void
-    {
-        this.newEntry = event.data;
-    }
 }
 </script>
 
 <style lang="scss">
 .debug
 {
-    max-height: 100%;
+    height: 100%;
     overflow: hidden;
 
     display: flex;
@@ -51,11 +36,9 @@ export default class Debug extends Vue
 
     text-align: center;
 
-    >*
+    .console-wrapper
     {
-        flex-grow: 0;
-        flex-shrink: 0;
-        flex-basis: 0;
+        flex: 1 1 auto;
     }
 }
 </style>

@@ -31,6 +31,7 @@
 
 #include <sdkconfig.h>
 #include <services/lift_service.h>
+#include <services/settings_service.h>
 #include <services/spiffs_service.h>
 #include <tasks/blink/blink_task.h>
 #include <tasks/webserver/webserver_task.h>
@@ -280,6 +281,14 @@ void initialize_app(void)
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
+
+    settings_t* settings;
+    settings_service_err_t settingsErr = settings_service_load(&settings);
+    if(settingsErr == SETTINGS_SERVICE_LOADED_DEFAULT)
+    {
+        // Initialize settings for the first time
+        settings_service_save(settings);
+    }
     
     // Register shutdown handler
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&shutdown_handler));
