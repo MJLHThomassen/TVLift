@@ -113,7 +113,7 @@ export class WebsocketService implements IWebsocketService
             });
     }
 
-    private onWebSocketMessage(event: MessageEvent): void
+    private onWebSocketMessage(event: MessageEvent<string>): void
     {
         for(const callback of this.messageRecievedCallbacks)
         {

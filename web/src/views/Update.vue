@@ -9,7 +9,7 @@
               Drag your file here to begin<br>or click to browse
             </p>
           </div>
-          <button :disabled="!canUpdate" type="button" class="button primary" @click="update">Update!</button>
+          <button type="button" class="primary" @click="update" :disabled="!canUpdate">Update!</button>
       </fieldset>
       <fieldset v-if="isUpdating || updateErrorMessage" class="col-sm-12 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
         <legend>Status</legend>
@@ -114,7 +114,7 @@ export default class LiftControls extends Vue
 <style lang="scss">
 .update
 {
-  text-align: center;
+
 }
 
 .dropbox

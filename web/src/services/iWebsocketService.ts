@@ -2,7 +2,7 @@ import { ConnectionStatus } from "@/services/iStatusService";
 
 export interface MessageReceivedCallback
 {
-    (event: MessageEvent): void
+    (event: MessageEvent<string>): void
 }
 
 export interface IWebsocketService

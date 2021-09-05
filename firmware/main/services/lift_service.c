@@ -8,6 +8,11 @@ static settings_service_registration_handle_t _settingsChangeHandle;
 
 static settings_change_err_t on_settings_changed(const settings_t* new, const settings_t* old)
 {
+    if(_liftHandle == NULL)
+    {
+        return SETTINGS_CHANGE_FAIL;
+    }
+    
     if(lift_set_speed_limits(_liftHandle, new->lift_min_speed, new->lift_max_speed) != LIFT_OK)
     {
         return SETTINGS_CHANGE_FAIL;

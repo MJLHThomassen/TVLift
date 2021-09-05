@@ -14,4 +14,6 @@ export interface IStatusService
 
     readonly liftStatus: LiftStatus;
     readonly isLiftOnline: boolean;
+
+    refresh(): Promise<void>;
 }

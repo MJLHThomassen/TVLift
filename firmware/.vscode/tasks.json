@@ -84,7 +84,6 @@
                     }
                 }
             ],
-            "dependsOn": [ "build:dashboard" ],
             "group": {
                 "kind": "build",
                 "isDefault": true

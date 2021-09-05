@@ -36,14 +36,25 @@ export class StatusService implements IStatusService
         this.pollLiftStatus();
     }
 
-    private pollLiftStatus(): Promise<void>
+    public async refresh(): Promise<void>
     {
-        return this.liftRepository.getStatus()
-            .then(async (status) =>
-            {
-                this._liftStatus = status.status;
-            })
-            .then(() => sleep(1000))
-            .then(() => this.pollLiftStatus());
+        const statusMessage = await this.liftRepository.getStatus();
+        this._liftStatus = statusMessage.status;
+    }
+
+    private async pollLiftStatus(): Promise<void>
+    {
+        await this.refresh();
+
+        if(this._liftStatus === "online")
+        {
+            await sleep(10000);
+        }
+        else
+        {
+            await sleep(1000);
+        }
+        
+        return this.pollLiftStatus();
     }
 }

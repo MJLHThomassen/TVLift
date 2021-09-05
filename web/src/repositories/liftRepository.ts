@@ -1,4 +1,4 @@
-import { singleton, inject } from "tsyringe";
+import { injectable, inject } from "tsyringe";
 import { AxiosInstance } from "axios";
 
 export type LiftStatus = "unknown" | "offline" | "online";
@@ -13,7 +13,7 @@ export interface LiftSpeedMessage
     speed: number;
 }
 
-@singleton()
+@injectable()
 export class LiftRepository
 {
     constructor(@inject("AxiosInstance") private readonly axios: AxiosInstance)
@@ -57,6 +57,23 @@ export class LiftRepository
         return this.axios
             .post("lift/down", data)
             .then(() => { return; });
+    }
+
+    public postStop(): Promise<void>
+    {
+        return this.axios
+            .post("lift/stop")
+            .then(() => { return; });
+    }
+
+    public getSpeed(): Promise<LiftSpeedMessage>
+    {
+        return this.axios
+            .get<LiftSpeedMessage>("lift/speed")
+            .then(x =>
+            {
+                return x.data as LiftSpeedMessage;
+            });
     }
 
     public postSpeed(speed: number): Promise<void>

@@ -1,5 +1,6 @@
 {
     "eslint.validate": [
         "typescript"
-    ]
+    ],
+    "cmake.configureOnOpen": false
 }
