@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #include <nvs.h>
+#include <esp_err.h>
 
 #include <logger.h>
 #include <map.h>
@@ -65,7 +66,7 @@ settings_service_err_t settings_service_load(const settings_t ** settings)
         initialize_default_settings(&_cachedSettings);
         *settings = &_cachedSettings;
 
-        LOG_W(TAG, "Can not open nvs. Loaded default settings.");
+        LOG_W(TAG, "Can not open nvs: %s. Loaded default settings.", esp_err_to_name(err));
 
         return SETTINGS_SERVICE_LOADED_DEFAULT;
     }
@@ -90,7 +91,7 @@ settings_service_err_t settings_service_load(const settings_t ** settings)
         initialize_default_settings(&_cachedSettings);
         *settings = &_cachedSettings;
 
-        LOG_W(TAG, "Can not read version from NVS. Loaded default settings.");
+        LOG_W(TAG, "Can not read version from NVS: %s. Loaded default settings.", esp_err_to_name(err));
 
         return SETTINGS_SERVICE_LOADED_DEFAULT;
     }
@@ -104,7 +105,7 @@ settings_service_err_t settings_service_load(const settings_t ** settings)
         initialize_default_settings(&_cachedSettings);
         *settings = &_cachedSettings;
 
-        LOG_W(TAG, "Can not read settings blob from NVS. Loaded default settings.");
+        LOG_W(TAG, "Can not read settings blob from NVS: %s. Loaded default settings.", esp_err_to_name(err));
 
         return SETTINGS_SERVICE_LOADED_DEFAULT;
     }
@@ -123,44 +124,47 @@ settings_service_err_t settings_service_save(const settings_t * settings)
     LOG_D(TAG, "Saving settings");
 
     // Inform all registrations about the changed settings
-    settings_t* currentSettings;
+    const settings_t* currentSettings;
     settings_service_err_t settingsErr = settings_service_load(&currentSettings);
     if(settingsErr != SETTINGS_SERVICE_OK && settingsErr != SETTINGS_SERVICE_LOADED_DEFAULT)
     {
         return settingsErr;
     }
 
-    map_iter iter;
-    map_iter_new(_registrations, &iter);
-
-    settings_service_registration_handle_t registrationHandle = NULL;
-    on_settings_changed_t callback = NULL;
-    settings_change_err_t changeErr = SETTINGS_CHANGE_OK;
-    do
+    if(_registrations != NULL)
     {
-        map_iter_next(iter, (void**)&registrationHandle, (void**)&callback);
-        
-        if(callback != NULL)
+        map_iter iter;
+        map_iter_new(_registrations, &iter);
+
+        settings_service_registration_handle_t registrationHandle = (settings_service_registration_handle_t)NULL;
+        on_settings_changed_t callback = NULL;
+        settings_change_err_t changeErr = SETTINGS_CHANGE_OK;
+        do
         {
-            LOG_V(TAG, "Checking new settings with callback handle %i", registrationHandle);
-
-            changeErr = callback(settings, currentSettings);
-            if(changeErr == SETTINGS_CHANGE_FAIL)
+            map_iter_next(iter, (void**)&registrationHandle, (void**)&callback);
+            
+            if(callback != NULL)
             {
-                LOG_W(TAG, "New settings not accepted by callback handle %i", registrationHandle);
-                break;
+                LOG_V(TAG, "Checking new settings with callback handle %i", registrationHandle);
+
+                changeErr = callback(settings, currentSettings);
+                if(changeErr == SETTINGS_CHANGE_FAIL)
+                {
+                    LOG_W(TAG, "New settings not accepted by callback handle %i", registrationHandle);
+                    break;
+                }
             }
+        } while(registrationHandle != (settings_service_registration_handle_t)NULL);
+        
+        map_iter_delete(iter);
+
+        // If the new settings are not acceptable, return error
+        if(changeErr != SETTINGS_CHANGE_OK)
+        {
+            LOG_W(TAG, "New settings invalid");
+
+            return SETTINGS_SERVICE_INVALID_SETTINGS;
         }
-    } while(registrationHandle != NULL);
-    
-    map_iter_delete(iter);
-
-    // If the new settings are not acceptable, return error
-    if(changeErr != SETTINGS_CHANGE_OK)
-    {
-        LOG_W(TAG, "New settings invalid");
-
-        return SETTINGS_SERVICE_INVALID_SETTINGS;
     }
 
     // If the new settings are accepted and applied, cache them, before trying to save them
@@ -174,7 +178,7 @@ settings_service_err_t settings_service_save(const settings_t * settings)
     err = nvs_open(SETTINGS_NAMESPACE, NVS_READWRITE, &handle);
     if(err != ESP_OK)
     {
-        LOG_W(TAG, "Can not open nvs. Settings not saved.");
+        LOG_W(TAG, "Can not open nvs: %s. Settings not saved.", esp_err_to_name(err));
 
         return SETTINGS_SERVICE_FAIL;
     }
@@ -184,7 +188,7 @@ settings_service_err_t settings_service_save(const settings_t * settings)
     {
         nvs_close(handle);
 
-        LOG_W(TAG, "Can not save version to NVS");
+        LOG_W(TAG, "Can not save version to NVS: %s", esp_err_to_name(err));
 
         return SETTINGS_SERVICE_FAIL;
     }
@@ -194,7 +198,7 @@ settings_service_err_t settings_service_save(const settings_t * settings)
     {
         nvs_close(handle);
 
-        LOG_W(TAG, "Can not save settings blob to NVS");
+        LOG_W(TAG, "Can not save settings blob to NVS: %s", esp_err_to_name(err));
 
         return SETTINGS_SERVICE_FAIL;
     }
@@ -204,7 +208,7 @@ settings_service_err_t settings_service_save(const settings_t * settings)
     {
         nvs_close(handle);
         
-        LOG_W(TAG, "Can not commit changes to NVS");
+        LOG_W(TAG, "Can not commit changes to NVS: %s", esp_err_to_name(err));
 
         return SETTINGS_SERVICE_FAIL;
     }
@@ -232,5 +236,8 @@ settings_service_registration_handle_t settings_service_register(on_settings_cha
 
 void settings_service_unregister(settings_service_registration_handle_t handle)
 {
-    map_remove(_registrations, (void*)handle);
+    if(_registrations != NULL)
+    {
+        map_remove(_registrations, (void*)handle);
+    }
 }

@@ -1,6 +1,9 @@
 const WebSocket = require("ws");
 const uuid = require("uuid");
 const Ansicolor = require("ansicolor");
+const dayjs = require("dayjs");
+
+const levels = ["V", "D", "I", "W", "E"];
 
 function sleep(ms)
 {
@@ -14,10 +17,11 @@ async function send(ws)
         return;
     }
 
-    const date = Date();
-    ws.send(date);
+    const date = dayjs().format("YYYY-MM-DD HH:mm:ss");
+    const level = levels[Math.round(Math.random() * 4)];
+    ws.send(`${level} (${date}) This is a log message\n`);
 
-    await sleep(2000);
+    await sleep(Math.random() * 1000 + 500);
 
     send(ws);
 }

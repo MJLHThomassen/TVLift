@@ -1,114 +1,219 @@
 <template>
-  <div class="console-window">
-    <div class="console" ref="console">
-      <span class="code-line" v-for="line in consoleLines" :key="line.index">
-        <span v-for="(span, index) in line.spans" :key="index" :style="span.css">
-          {{ span.text }}
-        </span>
-      </span>
+  <div class="console-wrapper"
+      @mouseenter="consoleMouseEnter($event)"
+      @mouseleave="consoleMouseLeave($event)"
+      @wheel="consoleWheel($event)">
+
+    <div class="menu" :class="{ show: isHoveringOverConsole }">
+      <button class="small" @click="clear">
+        <trash-2-icon size="1x"></trash-2-icon>
+      </button>
+      <button class="small" @click="toggleAutoscroll">
+        <lock-icon v-if="autoScroll" size="1x"></lock-icon>
+        <unlock-icon v-else size="1x"></unlock-icon>
+      </button>
+      <select v-model="selectedLevel">
+        <option v-for="level in levels" :key="level" :value="level">
+            {{ level }}
+        </option>
+      </select>
     </div>
+
+    <div id="terminal" ref="terminal"></div>
+
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue, Watch } from "vue-property-decorator";
-import * as Ansicolor from "ansicolor";
+import { Component, Vue, Inject, Watch } from "vue-property-decorator";
+import { ConsoleService, consoleLevels, ConsoleLevels, ConsoleEntry } from "@/services/consoleService";
 
-interface ConsoleLine
-{
-  index: number;
-  spans: Ansicolor.ParsedSpan[];
-}
+import { Terminal } from "xterm";
+import { FitAddon } from "xterm-addon-fit";
+import "xterm/css/xterm.css"
 
-@Component
+import { LockIcon, Trash2Icon, UnlockIcon } from "vue-feather-icons";
+@Component({
+  components: {
+    LockIcon,
+    Trash2Icon,
+    UnlockIcon
+  }
+})
 export default class Console extends Vue
 {
   public $refs!:
   {
-    console: HTMLDivElement;
+    terminal: HTMLDivElement
   };
+  
+  @Inject()
+  private consoleService!: ConsoleService;
 
-  @Prop()
-  private newEntry!: string;
+  private terminal!: Terminal;
+  private fitAddon!: FitAddon;
 
-  private consoleLines: ConsoleLine[] = [];
+  private levels = consoleLevels;
+  private selectedLevelIdx = 0;
+  private isHoveringOverConsole = false;
+  private autoScroll = true;
 
-  public constructor()
+  private get selectedLevel(): ConsoleLevels
   {
-    super();
+    return this.levels[this.selectedLevelIdx];
   }
 
-  @Watch("newEntry")
-  private onEntriesChanged(value: string): void
+  private set selectedLevel(level: ConsoleLevels)
   {
-    this.addConsoleLines(value);
+    this.selectedLevelIdx = consoleLevels.findIndex(x => x === level);
+    
+    // TODO: Sometimes the last written line appears after terminal.clear has finished
+    this.terminal.clear();
+    this.consoleService.entries
+      .forEach(x =>
+      {
+        if(x.level.idx >= this.selectedLevelIdx)
+        {
+          this.terminal.write(x.text,() =>
+          {
+            console.log("wrote", x.text);
+            if(this.autoScroll)
+            {
+              this.terminal.scrollToBottom();
+            }
+          });
+        }
+      });
   }
 
-    private async addConsoleLines(text: string): Promise<void>
+  private mounted(): void
   {
-    const parsed = Ansicolor.parse(text);
+    this.terminal = new Terminal({
+      disableStdin: true,
+      cols: 1,
+      rows: 1,
+      scrollback: this.consoleService.scrollback,
+      cursorStyle: "bar",
+      theme:{
+        background: getComputedStyle(document.documentElement).getPropertyValue("--secondary-back-color"),
+        cursor: getComputedStyle(document.documentElement).getPropertyValue("--secondary-back-color"),
+      }
+    });
 
-    // Parse text so spaces will be preserved when rendering html
-    parsed.spans.forEach((x) => { x.text = x.text.replace(" ", "\u00A0"); });
+    this.fitAddon = new FitAddon();
+    this.terminal.loadAddon(this.fitAddon);
 
-    this.consoleLines.push(
+    this.terminal.open(this.$refs.terminal);
+    this.fitAddon.fit();
+
+    window.addEventListener("resize", this.onWindowResize);
+  }
+
+  private beforeDestroy(): void
+  {
+    window.removeEventListener("resize", this.onWindowResize);
+  }
+
+  @Watch("consoleService.entries", { deep: true, immediate: true})
+  private onConsoleServiceEntriesChanged(val: ConsoleEntry[]): void
+  {
+    if(this.terminal && val?.length)
     {
-      index: this.consoleLines.length,
-      spans: parsed.spans,
-    } as ConsoleLine);
+      const lastVal = val[val.length-1];
 
-    await this.$nextTick();
+      if(lastVal.level.idx >= this.selectedLevelIdx)
+      {
+        this.terminal.write(lastVal.text,() =>
+        {
+          if(this.autoScroll)
+          {
+            this.terminal.scrollToBottom();
+          }
+        });
+      }
+    }
+  }
 
-    this.$refs.console.lastElementChild?.scrollIntoView(true);
+  private onWindowResize(): void
+  {
+    this.fitAddon.fit();
+  }
+
+  private consoleMouseEnter(): void
+  {
+    this.isHoveringOverConsole = true;
+  }
+
+  private consoleMouseLeave(): void
+  {
+    this.isHoveringOverConsole = false;
+  }
+
+  private consoleWheel(): void
+  {
+    this.autoScroll = false;
+  }
+
+  private clear(): void
+  {
+    this.terminal.clear();
+    this.consoleService.entries.splice(0);
+  }
+
+  private toggleAutoscroll(): void
+  {
+    this.autoScroll = !this.autoScroll;
+
+    if(this.autoScroll)
+    {
+      this.terminal.scrollToBottom();
+    }
+    else
+    {
+      this.terminal.scrollToLine(0);
+    }
   }
 }
 </script>
 
 <style scoped lang="scss">
-.console-window
+.console-wrapper
 {
-  flex-grow: 1;
-  flex-shrink: 1;
-  flex-basis: auto;
+  position: relative;
 
-  overflow: auto;
-  text-align: left;
+  height: 100%;
+  
+  .menu
+  {
+    position: absolute;
+    z-index: 10;
+    
+    right: calc(var(--universal-margin) + 18px);
+    top: 0;
 
-  counter-reset: line;
+    background: transparent;
+    opacity: 0.3;
+
+    &.show
+    {
+      background: var(--back-color);
+      opacity: 1;
+    }
+
+  }
+}
+
+#terminal
+{
+  min-height: 47px;
+  height: 100%;
+  z-index: 0;
+
   background: var(--secondary-back-color);
-  padding: calc(1.5 * var(--universal-padding));
   margin: var(--universal-margin);
   border: .0625rem solid var(--secondary-border-color);
   border-left: .25rem solid var(--pre-color);
   border-radius: 0 var(--universal-border-radius) var(--universal-border-radius) 0;
-
-  .console
-  {
-    .code-line
-    {
-      display: block;
-      white-space: nowrap;
-      font-size: .85rem;
-      
-      >*
-      {
-        font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;
-        line-height: 0;
-      }
-
-      &:before
-      {
-        background: transparent;
-        // counter-increment: line;
-        content: ">"; // counter(line);
-        //display: inline-block;
-        // border-right: .0625rem solid var(--pre-color);
-        // padding: 0 var(--universal-padding);
-        // margin-right: var(--universal-margin);
-        color: var(--border-color);
-        text-align: right;
-      }
-    }
-  }
 }
+
 </style>

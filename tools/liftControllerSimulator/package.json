@@ -11,6 +11,7 @@
   "dependencies": {
     "ansicolor": "^1.1.95",
     "cors": "^2.8.5",
+    "dayjs": "^1.10.6",
     "express": "^4.17.1",
     "http-terminator": "^3.0.0",
     "terminal-kit": "^2.1.5",

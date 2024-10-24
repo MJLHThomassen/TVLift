@@ -87,7 +87,7 @@ static void http_request_handler(struct mg_connection* nc, int ev, void* ev_data
     {
     case MG_EV_HTTP_REQUEST:
 
-        LOG_D(
+        LOG_V(
             TAG,
             "HTTP Request recieved: %.*s: %.*s",
             message->method.len, message->method.p,
@@ -101,14 +101,14 @@ static void http_request_handler(struct mg_connection* nc, int ev, void* ev_data
             if(methodHandlerInfo->method == method && methodHandlerInfo->handler != NULL)
             {
                 // Call the handler
-                LOG_D(TAG, "HTTP Request handler found, calling handler");
+                LOG_V(TAG, "HTTP Request handler found, calling handler");
                 methodHandlerInfo->handler(nc, message, methodHandlerInfo->user_data);
                 return;
             }
         }
 
         // Method has no endpoint
-        LOG_D(TAG, "HTTP Request handler not found");
+        LOG_V(TAG, "HTTP Request handler not found");
         mg_http_send_error(nc, 404, NULL);
         return;
 

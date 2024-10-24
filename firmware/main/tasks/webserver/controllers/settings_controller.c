@@ -20,8 +20,8 @@ static settings_t getSettings(struct http_message* message)
         message->body.p,
         message->body.len,
         "{"
-            "liftMinSpeed: %u",
-            "liftMaxSpeed: %u",
+            "liftMinSpeed: %u,"
+            "liftMaxSpeed: %u,"
             "liftDefaultSpeed: %u"
         "}",
         &settings.lift_min_speed,

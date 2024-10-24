@@ -145,6 +145,19 @@ static lift_err_t lift_move_down(const lift_device_handle_t handle)
     return lift_start_pul(handle);
 }
 
+static lift_err_t lift_move_stop(const lift_device_handle_t handle)
+{
+    // Stop moving ASAP, don't do or print anything before this line
+    lift_stop_pul(handle);
+
+    // Disable the Lift motors
+    gpio_set_level(handle->gpioEna, MOTORS_DISABLED);
+
+    LOG_I(TAG, "Lift stopped.");
+
+    return LIFT_OK;
+}
+
 static void IRAM_ATTR endstop_isr_handler(void* arg)
 {
     lift_endstop_config_t* endstopConfig = (lift_endstop_config_t*)arg;
@@ -166,7 +179,7 @@ static void lift_monitor_task(void* arg)
             // If any endstop is depressed, just stop the lift immediately
             if (isEndstopActive)
             {
-                lift_stop_pul(handle);
+                lift_move_stop(handle);
             }
 
             if (endstopGpio == handle->endstopDownConfig.gpio && isEndstopActive)
@@ -188,7 +201,7 @@ static void lift_monitor_task(void* arg)
             // Stop immediately and figure out state later if we need to stop
             if (command == LIFT_COMMAND_STOP)
             {
-                lift_stop_pul(handle);
+                lift_move_stop(handle);
             }
 
             lift_state_t currentState = handle->state;
@@ -545,16 +558,6 @@ lift_err_t lift_stop(const lift_device_handle_t handle)
 
     return lift_send_command(handle, LIFT_COMMAND_STOP);
 }
-
-// lift_err_t lift_disable(const lift_device_handle_t handle)
-// {
-//     LOG_I(TAG, "Lift being disabled.");
-
-//     // Disable the Lift motors
-//     gpio_set_level(handle->gpioEna, MOTORS_DISABLED);
-
-//     return LIFT_OK;
-// }
 
 uint32_t lift_get_speed(const lift_device_handle_t handle)
 {

@@ -15,6 +15,15 @@ export default new Router({
       },
     },
     {
+      path: "/settings",
+      name: "settings",
+      component: () => import(/* webpackChunkName: "update" */ "./views/Settings.vue"),
+      meta:
+      {
+        displayName: "Settings",
+      },
+    },
+    {
       path: "/update",
       name: "update",
       component: () => import(/* webpackChunkName: "update" */ "./views/Update.vue"),
